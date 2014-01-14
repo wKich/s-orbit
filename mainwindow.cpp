@@ -1,0 +1,385 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainWindow)
+{
+    ui->setupUi(this);
+    defaultPalette.setColor(QPalette::Button, Qt::white);
+    ui->colorButton->setPalette(defaultPalette);
+    editing = false;
+    QThread* thread = new QThread;
+    orbitCalc = new OrbitCalculator;
+    orbitCalc->moveToThread(thread);
+    connect(orbitCalc, SIGNAL(destroyed()), thread, SLOT(quit()));
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+    connect(ui->addEditPlanetButton, SIGNAL(clicked()), this, SLOT(addPlanet()));
+    connect(ui->calcButton, SIGNAL(clicked()), this, SLOT(startStopCalculation()));
+    connect(orbitCalc, SIGNAL(finished()), this, SLOT(enableControls()));
+    connect(ui->isStaticCheckBox, SIGNAL(toggled(bool)), this, SLOT(enablePlanetSpeed(bool)));
+    connect(ui->countsLineEdit, SIGNAL(editingFinished()), this, SLOT(calculateResultSize()));
+    connect(ui->addEditPlanetButton, SIGNAL(clicked()), this, SLOT(calculateResultSize()));
+    connect(ui->planetTableWidget, SIGNAL(itemSelectionChanged()), this, SLOT(editPlanet()));
+    connect(ui->colorButton, SIGNAL(clicked()), this, SLOT(showColorDialog()));
+    thread->start();
+}
+
+MainWindow::~MainWindow()
+{
+    if (orbitCalc->isRunning())
+        orbitCalc->stop();
+    orbitCalc->deleteLater();
+    delete ui;
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    if (this->focusWidget() == ui->planetTableWidget) {
+        switch (event->key()) {
+        case Qt::Key_Delete:
+            if (ui->planetTableWidget->selectedItems().size() > 0) {
+                orbitCalc->removePlanet(ui->planetTableWidget->currentRow());
+                ui->planetTableWidget->removeRow(ui->planetTableWidget->selectedItems().first()->row());
+            }
+            break;
+        case Qt::Key_Escape:
+            ui->planetTableWidget->clearSelection();
+            break;
+        default:
+            QMainWindow::keyPressEvent(event);
+            break;
+        }
+    } else {
+        QMainWindow::keyPressEvent(event);
+    }
+}
+
+void MainWindow::addPlanet()
+{
+    QPalette invalidPalette;
+    invalidPalette.setColor(QPalette::WindowText, Qt::red);
+    invalidPalette.setColor(QPalette::Text, Qt::red);
+
+    bool ok;
+    bool allOk = true;
+    float mass = ui->massLineEdit->text().toFloat(&ok);
+    if (ok) {
+        ui->massLabel->setPalette(this->palette());
+        ui->massLineEdit->setPalette(this->palette());
+    } else {
+        allOk = false;
+        ui->massLabel->setPalette(invalidPalette);
+        ui->massLineEdit->setPalette(invalidPalette);
+    }
+    QVector2D position;
+    position.setX(ui->xPositionLineEdit->text().toFloat(&ok));
+    if (ok) {
+        ui->xPositionLabel->setPalette(this->palette());
+        ui->xPositionLineEdit->setPalette(this->palette());
+    } else {
+        allOk = false;
+        ui->xPositionLabel->setPalette(invalidPalette);
+        ui->xPositionLineEdit->setPalette(invalidPalette);
+    }
+    position.setY(ui->yPositionLineEdit->text().toFloat(&ok));
+    if (ok) {
+        ui->yPositionLabel->setPalette(this->palette());
+        ui->yPositionLineEdit->setPalette(this->palette());
+    } else {
+        allOk = false;
+        ui->yPositionLabel->setPalette(invalidPalette);
+        ui->yPositionLineEdit->setPalette(invalidPalette);
+    }
+    QVector2D speed;
+    bool isStatic = ui->isStaticCheckBox->isChecked();
+    if (isStatic == false) {
+        speed.setX(ui->xSpeedLineEdit->text().toFloat(&ok));
+        if (ok) {
+            ui->xSpeedLabel->setPalette(this->palette());
+            ui->xSpeedLineEdit->setPalette(this->palette());
+        } else {
+            allOk = false;
+            ui->xSpeedLabel->setPalette(invalidPalette);
+            ui->xSpeedLineEdit->setPalette(invalidPalette);
+        }
+        speed.setY(ui->ySpeedLineEdit->text().toFloat(&ok));
+        if (ok) {
+            ui->ySpeedLabel->setPalette(this->palette());
+            ui->ySpeedLineEdit->setPalette(this->palette());
+        } else {
+            allOk = false;
+            ui->ySpeedLabel->setPalette(invalidPalette);
+            ui->ySpeedLineEdit->setPalette(invalidPalette);
+        }
+    } else {
+        ui->xSpeedLabel->setPalette(this->palette());
+        ui->xSpeedLineEdit->setPalette(this->palette());
+        ui->ySpeedLabel->setPalette(this->palette());
+        ui->ySpeedLineEdit->setPalette(this->palette());
+    }
+    QColor color = ui->colorButton->palette().color(QPalette::Button);
+
+    if (allOk) {
+        if (editing) {
+            ui->planetTableWidget->selectedItems()[0]->setText(ui->massLineEdit->text());
+            ui->planetTableWidget->selectedItems()[1]->setText(ui->xPositionLineEdit->text());
+            ui->planetTableWidget->selectedItems()[2]->setText(ui->yPositionLineEdit->text());
+            if (isStatic == false) {
+                ui->planetTableWidget->selectedItems()[3]->setText(ui->xSpeedLineEdit->text());
+                ui->planetTableWidget->selectedItems()[4]->setText(ui->ySpeedLineEdit->text());
+                ui->planetTableWidget->selectedItems()[5]->setText("false");
+            } else {
+                ui->planetTableWidget->selectedItems()[3]->setText("0");
+                ui->planetTableWidget->selectedItems()[4]->setText("0");
+                ui->planetTableWidget->selectedItems()[5]->setText("true");
+            }
+            ui->planetTableWidget->selectedItems()[6]->setBackgroundColor(color);
+            orbitCalc->modifyPlanet(ui->planetTableWidget->currentRow(), mass, position, speed, isStatic, color);
+            ui->planetTableWidget->clearSelection();
+        } else {
+            ui->planetTableWidget->insertRow(ui->planetTableWidget->rowCount());
+            ui->planetTableWidget->setItem(ui->planetTableWidget->rowCount() - 1, 0, new QTableWidgetItem(ui->massLineEdit->text()));
+            ui->planetTableWidget->setItem(ui->planetTableWidget->rowCount() - 1, 1, new QTableWidgetItem(ui->xPositionLineEdit->text()));
+            ui->planetTableWidget->setItem(ui->planetTableWidget->rowCount() - 1, 2, new QTableWidgetItem(ui->yPositionLineEdit->text()));
+            if (isStatic == false) {
+                ui->planetTableWidget->setItem(ui->planetTableWidget->rowCount() - 1, 3, new QTableWidgetItem(ui->xSpeedLineEdit->text()));
+                ui->planetTableWidget->setItem(ui->planetTableWidget->rowCount() - 1, 4, new QTableWidgetItem(ui->ySpeedLineEdit->text()));
+                ui->planetTableWidget->setItem(ui->planetTableWidget->rowCount() - 1, 5, new QTableWidgetItem("false"));
+            } else {
+                ui->planetTableWidget->setItem(ui->planetTableWidget->rowCount() - 1, 3, new QTableWidgetItem("0"));
+                ui->planetTableWidget->setItem(ui->planetTableWidget->rowCount() - 1, 4, new QTableWidgetItem("0"));
+                ui->planetTableWidget->setItem(ui->planetTableWidget->rowCount() - 1, 5, new QTableWidgetItem("true"));
+            }
+            ui->planetTableWidget->setItem(ui->planetTableWidget->rowCount() - 1, 6, new QTableWidgetItem());
+            ui->planetTableWidget->item(ui->planetTableWidget->rowCount() - 1, 6)->setBackgroundColor(color);
+            orbitCalc->addPlanet(mass, position, speed, isStatic, color);
+        }
+        ui->massLineEdit->clear();
+        ui->xPositionLineEdit->clear();
+        ui->yPositionLineEdit->clear();
+        ui->xSpeedLineEdit->clear();
+        ui->ySpeedLineEdit->clear();
+        ui->isStaticCheckBox->setChecked(false);
+        ui->colorButton->setPalette(defaultPalette);
+    }
+}
+
+void MainWindow::startStopCalculation()
+{
+    if (orbitCalc->isRunning()) {
+        enableControls();
+        orbitCalc->stop();
+    } else {
+        QPalette invalidPalette;
+        invalidPalette.setColor(QPalette::WindowText, Qt::red);
+        invalidPalette.setColor(QPalette::Text, Qt::red);
+
+        bool ok;
+        bool allOk = true;
+        float deltaT = ui->deltaTimeLineEdit->text().toFloat(&ok);
+        if (ok) {
+            ui->deltaTimeLabel->setPalette(this->palette());
+            ui->deltaTimeLineEdit->setPalette(this->palette());
+        } else {
+            allOk = false;
+            ui->deltaTimeLabel->setPalette(invalidPalette);
+            ui->deltaTimeLineEdit->setPalette(invalidPalette);
+        }
+        unsigned int count = ui->countsLineEdit->text().toUInt(&ok);
+        if (ok) {
+            ui->countsLabel->setPalette(this->palette());
+            ui->countsLineEdit->setPalette(this->palette());
+        } else {
+            allOk = false;
+            ui->countsLabel->setPalette(invalidPalette);
+            ui->countsLineEdit->setPalette(invalidPalette);
+        }
+        QVector2D minBounder;
+        minBounder.setX(ui->xMinLineEdit->text().toFloat(&ok));
+        if (ok) {
+            ui->xMinLabel->setPalette(this->palette());
+            ui->xMinLineEdit->setPalette(this->palette());
+        } else {
+            allOk = false;
+            ui->xMinLabel->setPalette(invalidPalette);
+            ui->xMinLineEdit->setPalette(invalidPalette);
+        }
+        minBounder.setY(ui->yMinLineEdit->text().toFloat(&ok));
+        if (ok) {
+            ui->yMinLabel->setPalette(this->palette());
+            ui->yMinLineEdit->setPalette(this->palette());
+        } else {
+            allOk = false;
+            ui->yMinLabel->setPalette(invalidPalette);
+            ui->yMinLineEdit->setPalette(invalidPalette);
+        }
+        QVector2D maxBounder;
+        maxBounder.setX(ui->xMaxLineEdit->text().toFloat(&ok));
+        if (ok) {
+            ui->xMaxLabel->setPalette(this->palette());
+            ui->xMaxLineEdit->setPalette(this->palette());
+        } else {
+            allOk = false;
+            ui->xMaxLabel->setPalette(invalidPalette);
+            ui->xMaxLineEdit->setPalette(invalidPalette);
+        }
+        maxBounder.setY(ui->yMaxLineEdit->text().toFloat(&ok));
+        if (ok) {
+            ui->yMaxLabel->setPalette(this->palette());
+            ui->yMaxLineEdit->setPalette(this->palette());
+        } else {
+            allOk = false;
+            ui->yMaxLabel->setPalette(invalidPalette);
+            ui->yMaxLineEdit->setPalette(invalidPalette);
+        }
+
+        if (allOk) {
+            ui->massLabel->setEnabled(false);
+            ui->massLineEdit->setEnabled(false);
+            ui->xPositionLabel->setEnabled(false);
+            ui->xPositionLineEdit->setEnabled(false);
+            ui->yPositionLabel->setEnabled(false);
+            ui->yPositionLineEdit->setEnabled(false);
+            ui->xSpeedLabel->setEnabled(false);
+            ui->xSpeedLineEdit->setEnabled(false);
+            ui->ySpeedLabel->setEnabled(false);
+            ui->ySpeedLineEdit->setEnabled(false);
+            ui->isStaticCheckBox->setEnabled(false);
+            ui->colorButton->setEnabled(false);
+            ui->addEditPlanetButton->setEnabled(false);
+            ui->deltaTimeLabel->setEnabled(false);
+            ui->deltaTimeLineEdit->setEnabled(false);
+            ui->countsLabel->setEnabled(false);
+            ui->countsLineEdit->setEnabled(false);
+            ui->xMinLabel->setEnabled(false);
+            ui->xMinLineEdit->setEnabled(false);
+            ui->yMinLabel->setEnabled(false);
+            ui->yMinLineEdit->setEnabled(false);
+            ui->xMaxLabel->setEnabled(false);
+            ui->xMaxLineEdit->setEnabled(false);
+            ui->yMaxLabel->setEnabled(false);
+            ui->yMaxLineEdit->setEnabled(false);
+            ui->calcButton->setText("Stop Calc");
+            orbitCalc->start(deltaT, count, minBounder, maxBounder);
+        }
+    }
+}
+
+void MainWindow::enablePlanetSpeed(const bool &checked)
+{
+    if (checked) {
+        ui->xSpeedLabel->setEnabled(false);
+        ui->xSpeedLineEdit->setEnabled(false);
+        ui->ySpeedLabel->setEnabled(false);
+        ui->ySpeedLineEdit->setEnabled(false);
+    } else {
+        ui->xSpeedLabel->setEnabled(true);
+        ui->xSpeedLineEdit->setEnabled(true);
+        ui->ySpeedLabel->setEnabled(true);
+        ui->ySpeedLineEdit->setEnabled(true);
+    }
+}
+
+void MainWindow::enableControls()
+{
+    ui->massLabel->setEnabled(true);
+    ui->massLineEdit->setEnabled(true);
+    ui->xPositionLabel->setEnabled(true);
+    ui->xPositionLineEdit->setEnabled(true);
+    ui->yPositionLabel->setEnabled(true);
+    ui->yPositionLineEdit->setEnabled(true);
+    ui->xSpeedLabel->setEnabled(true);
+    ui->xSpeedLineEdit->setEnabled(true);
+    ui->ySpeedLabel->setEnabled(true);
+    ui->ySpeedLineEdit->setEnabled(true);
+    ui->isStaticCheckBox->setEnabled(true);
+    ui->colorButton->setEnabled(true);
+    ui->addEditPlanetButton->setEnabled(true);
+    ui->deltaTimeLabel->setEnabled(true);
+    ui->deltaTimeLineEdit->setEnabled(true);
+    ui->countsLabel->setEnabled(true);
+    ui->countsLineEdit->setEnabled(true);
+    ui->xMinLabel->setEnabled(true);
+    ui->xMinLineEdit->setEnabled(true);
+    ui->yMinLabel->setEnabled(true);
+    ui->yMinLineEdit->setEnabled(true);
+    ui->xMaxLabel->setEnabled(true);
+    ui->xMaxLineEdit->setEnabled(true);
+    ui->yMaxLabel->setEnabled(true);
+    ui->yMaxLineEdit->setEnabled(true);
+    ui->calcButton->setText("Calc");
+}
+
+void MainWindow::calculateResultSize()
+{
+    bool ok;
+    unsigned int count = ui->countsLineEdit->text().toUInt(&ok);
+    if (ok && count > 0 && ui->planetTableWidget->rowCount() > 0) {
+        //deltaT + minBounder + maxBounder + staticCount + dynamicCount
+        float resultSize = sizeof(float) + 2 * sizeof(float) + 2 * sizeof(float) + sizeof(unsigned int) + sizeof(unsigned int);
+        for (int i = 0; i < ui->planetTableWidget->rowCount(); i++) {
+            if (ui->planetTableWidget->item(i, 5)->data(Qt::DisplayRole).toString() == "true") {
+                resultSize += 2 * sizeof(float) + sizeof(QRgb);
+            } else {
+                resultSize += 2 * count * sizeof(float) + sizeof(QRgb);
+            }
+        }
+        if (resultSize > 1024) {
+            resultSize /= 1024;
+            if (resultSize > 1024) {
+                resultSize /= 1024;
+                ui->statusBar->showMessage(QString::number(resultSize) + " Mbytes");
+            } else {
+                ui->statusBar->showMessage(QString::number(resultSize) + " Kbytes");
+            }
+        } else {
+            ui->statusBar->showMessage(QString::number(resultSize) + " bytes");
+        }
+    } else {
+        ui->statusBar->clearMessage();
+    }
+}
+
+void MainWindow::editPlanet()
+{
+    if (ui->planetTableWidget->selectedItems().isEmpty()) {
+        editing = false;
+        ui->massLineEdit->clear();
+        ui->xPositionLineEdit->clear();
+        ui->yPositionLineEdit->clear();
+        ui->xSpeedLineEdit->clear();
+        ui->ySpeedLineEdit->clear();
+        ui->isStaticCheckBox->setChecked(false);
+        ui->colorButton->setPalette(defaultPalette);
+        ui->addEditPlanetButton->setText("Add");
+    } else {
+        editing = true;
+        ui->massLineEdit->setText(ui->planetTableWidget->selectedItems().at(0)->text());
+        ui->xPositionLineEdit->setText(ui->planetTableWidget->selectedItems().at(1)->text());
+        ui->yPositionLineEdit->setText(ui->planetTableWidget->selectedItems().at(2)->text());
+        if (ui->planetTableWidget->selectedItems().at(5)->text() == "false") {
+            ui->xSpeedLineEdit->setText(ui->planetTableWidget->selectedItems().at(3)->text());
+            ui->ySpeedLineEdit->setText(ui->planetTableWidget->selectedItems().at(4)->text());
+            ui->isStaticCheckBox->setChecked(false);
+        } else {
+            ui->xSpeedLineEdit->clear();
+            ui->ySpeedLineEdit->clear();
+            ui->isStaticCheckBox->setChecked(true);
+        }
+        QPalette palette;
+        palette.setColor(QPalette::Button, ui->planetTableWidget->selectedItems().at(6)->backgroundColor());
+        ui->colorButton->setPalette(palette);
+        ui->addEditPlanetButton->setText("Edit");
+    }
+}
+
+void MainWindow::showColorDialog()
+{
+    QColor color = QColorDialog::getColor(ui->colorButton->palette().color(QPalette::Button), this, "Planet Color");
+    if (color.isValid()) {
+        QPalette palette;
+        palette.setColor(QPalette::Button, color);
+        ui->colorButton->setPalette(palette);
+    }
+}

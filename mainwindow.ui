@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="7" column="0" colspan="9">
+     <widget class="Line" name="line">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="0">
+     <widget class="QLineEdit" name="deltaTimeLineEdit"/>
+    </item>
+    <item row="3" column="3">
+     <widget class="QLabel" name="xSpeedLabel">
+      <property name="text">
+       <string>x Speed</string>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="4">
+     <widget class="QLabel" name="xMaxLabel">
+      <property name="text">
+       <string>x Max</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="2">
+     <widget class="QLabel" name="yPositionLabel">
+      <property name="text">
+       <string>y Position</string>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="0">
+     <widget class="QLabel" name="deltaTimeLabel">
+      <property name="text">
+       <string>∆t</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="4">
+     <widget class="QLineEdit" name="ySpeedLineEdit"/>
+    </item>
+    <item row="9" column="4">
+     <widget class="QLineEdit" name="xMaxLineEdit"/>
+    </item>
+    <item row="8" column="5">
+     <widget class="QLabel" name="yMaxLabel">
+      <property name="text">
+       <string>y Max</string>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="2">
+     <widget class="QLabel" name="xMinLabel">
+      <property name="text">
+       <string>x Min</string>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="1">
+     <widget class="QLabel" name="countsLabel">
+      <property name="text">
+       <string>Counts</string>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="5">
+     <widget class="QLineEdit" name="yMaxLineEdit"/>
+    </item>
+    <item row="6" column="1">
+     <widget class="QLineEdit" name="xPositionLineEdit"/>
+    </item>
+    <item row="6" column="0">
+     <widget class="QLineEdit" name="massLineEdit"/>
+    </item>
+    <item row="9" column="3">
+     <widget class="QLineEdit" name="yMinLineEdit"/>
+    </item>
+    <item row="9" column="1">
+     <widget class="QLineEdit" name="countsLineEdit"/>
+    </item>
+    <item row="6" column="7">
+     <widget class="QPushButton" name="addEditPlanetButton">
+      <property name="text">
+       <string>Add</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="4">
+     <widget class="QLabel" name="ySpeedLabel">
+      <property name="text">
+       <string>y Speed</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="massLabel">
+      <property name="text">
+       <string>Mass</string>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="2">
+     <widget class="QLineEdit" name="xMinLineEdit"/>
+    </item>
+    <item row="6" column="5">
+     <widget class="QCheckBox" name="isStaticCheckBox">
+      <property name="text">
+       <string>IsStatic</string>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="7">
+     <widget class="QPushButton" name="calcButton">
+      <property name="text">
+       <string>Calc</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLabel" name="xPositionLabel">
+      <property name="text">
+       <string>x Position</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="3">
+     <widget class="QLineEdit" name="xSpeedLineEdit"/>
+    </item>
+    <item row="8" column="3">
+     <widget class="QLabel" name="yMinLabel">
+      <property name="text">
+       <string>y Min</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="2">
+     <widget class="QLineEdit" name="yPositionLineEdit"/>
+    </item>
+    <item row="0" column="0" rowspan="2" colspan="9">
+     <widget class="QTableWidget" name="planetTableWidget">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>1</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::SingleSelection</enum>
+      </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <column>
+       <property name="text">
+        <string>Mass</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>x Position</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>y Position</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>x Speed</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>y Speed</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>is Static</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Color</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="6" column="6">
+     <widget class="QPushButton" name="colorButton">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <tabstops>
+  <tabstop>planetTableWidget</tabstop>
+  <tabstop>massLineEdit</tabstop>
+  <tabstop>xPositionLineEdit</tabstop>
+  <tabstop>yPositionLineEdit</tabstop>
+  <tabstop>xSpeedLineEdit</tabstop>
+  <tabstop>ySpeedLineEdit</tabstop>
+  <tabstop>isStaticCheckBox</tabstop>
+  <tabstop>addEditPlanetButton</tabstop>
+  <tabstop>deltaTimeLineEdit</tabstop>
+  <tabstop>countsLineEdit</tabstop>
+  <tabstop>xMinLineEdit</tabstop>
+  <tabstop>yMinLineEdit</tabstop>
+  <tabstop>xMaxLineEdit</tabstop>
+  <tabstop>yMaxLineEdit</tabstop>
+  <tabstop>calcButton</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
