@@ -17,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->addEditPlanetButton, SIGNAL(clicked()), this, SLOT(addPlanet()));
     connect(ui->calcButton, SIGNAL(clicked()), this, SLOT(startStopCalculation()));
     connect(orbitCalc, SIGNAL(finished()), this, SLOT(enableControls()));
+    connect(orbitCalc, SIGNAL(finished()), this, SLOT(showCalculationStatus()));
     connect(ui->isStaticCheckBox, SIGNAL(toggled(bool)), this, SLOT(enablePlanetSpeed(bool)));
     connect(ui->countsLineEdit, SIGNAL(editingFinished()), this, SLOT(calculateResultSize()));
     connect(ui->addEditPlanetButton, SIGNAL(clicked()), this, SLOT(calculateResultSize()));
@@ -381,5 +382,28 @@ void MainWindow::showColorDialog()
         QPalette palette;
         palette.setColor(QPalette::Button, color);
         ui->colorButton->setPalette(palette);
+    }
+}
+
+void MainWindow::showCalculationStatus()
+{
+    const CalcStatus status = orbitCalc->getCalculationStatus();
+    QString msg;
+    switch (status.code) {
+    case CalcStatus::Ok:
+        QMessageBox::information(this, "Calculation Status", "Success");
+        break;
+    case CalcStatus::OutOfRange:
+        msg.append("Out of range:\n");
+        for (int i = 1; i < status.values.size(); i++) {
+            QVector2D pos = orbitCalc->getPlanet(status.values.at(i)).currentPosition;
+            msg.append("Planet_" + QString::number(status.values.at(i)) + " (" + QString::number(pos.x()) + ", " + QString::number(pos.y()) + ")\n");
+        }
+        msg.append("\n");
+        msg.append("Final samples: " + QString::number(status.values.first()));
+        QMessageBox::warning(this, "Calculation Status", msg);
+        break;
+    default:
+        break;
     }
 }

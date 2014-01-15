@@ -5,6 +5,7 @@
 #include <QKeyEvent>
 #include <QTableWidgetItem>
 #include <QColorDialog>
+#include <QMessageBox>
 
 #include <QDebug>
 
@@ -39,6 +40,7 @@ private slots:
     void calculateResultSize();
     void editPlanet();
     void showColorDialog();
+    void showCalculationStatus();
 };
 
 #endif // MAINWINDOW_H

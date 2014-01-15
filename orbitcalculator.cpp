@@ -4,6 +4,7 @@ OrbitCalculator::OrbitCalculator(QObject *parent) :
     QObject(parent),
     running(false)
 {
+    samples = 0;
     connect(this, SIGNAL(exec()), this, SLOT(run()));
     connect(this, SIGNAL(finished()), this, SLOT(save()));
 }
@@ -20,12 +21,8 @@ void OrbitCalculator::addPlanet(const float &mass, const QVector2D &pos, const Q
 void OrbitCalculator::modifyPlanet(const int &id, const float &mass, const QVector2D &curPos, const QVector2D &curSpeed, const bool &isStatic, const QColor &color)
 {
     planets[id].mass = mass;
-    planets[id].xPositions[0] = curPos.x();
-    planets[id].yPositions[0] = curPos.y();
     planets[id].startPosition = curPos;
-    planets[id].currentPosition = curPos;
     planets[id].startSpeed = curSpeed;
-    planets[id].currentSpeed = curSpeed;
     planets[id].isStatic = isStatic;
     planets[id].color = color;
 }
@@ -35,6 +32,11 @@ void OrbitCalculator::removePlanet(const int &id)
     planets.removeAt(id);
 }
 
+const Planet &OrbitCalculator::getPlanet(const int &id) const
+{
+    return planets.at(id);
+}
+
 bool OrbitCalculator::isRunning() const
 {
     return running;
@@ -42,13 +44,22 @@ bool OrbitCalculator::isRunning() const
 
 void OrbitCalculator::start(const float &dt, const unsigned int &c, const QVector2D &min, const QVector2D &max)
 {
+    status.code = CalcStatus::Ok;
+    status.values.clear();
+
     deltaT = dt;
     samples = c;
     minBounder = min;
     maxBounder = max;
     for (int i = 0; i < planets.size(); i++) {
-        planets[i].xPositions.reserve(samples);
-        planets[i].yPositions.reserve(samples);
+        planets[i].currentPosition = planets.at(i).startPosition;
+        planets[i].currentSpeed = planets.at(i).startSpeed;
+        if (planets.at(i).isStatic == false) {
+            planets[i].xPositions.reserve(samples);
+            planets[i].yPositions.reserve(samples);
+            planets[i].xPositions.append(planets.at(i).startPosition.x());
+            planets[i].yPositions.append(planets.at(i).startPosition.y());
+        }
     }
     emit exec();
 }
@@ -56,6 +67,11 @@ void OrbitCalculator::start(const float &dt, const unsigned int &c, const QVecto
 void OrbitCalculator::stop()
 {
     running = false;
+}
+
+const CalcStatus & OrbitCalculator::getCalculationStatus() const
+{
+    return status;
 }
 
 void OrbitCalculator::run()
@@ -79,16 +95,22 @@ void OrbitCalculator::run()
                 planets[j].currentSpeed += f / planets.at(j).mass * deltaT;
                 planets[j].currentPosition += planets.at(j).currentSpeed * deltaT;
                 planets[j].xPositions.append(planets.at(j).currentPosition.x());
-                if (planets.at(j).xPositions.last() < minBounder.x() || planets.at(j).xPositions.last() > maxBounder.x())
-                    running = false;
                 planets[j].yPositions.append(planets.at(j).currentPosition.y());
-                if (planets.at(j).yPositions.last() < minBounder.y() || planets.at(j).yPositions.last() > maxBounder.y())
+                if (planets.at(j).xPositions.last() < minBounder.x() || planets.at(j).xPositions.last() > maxBounder.x() ||
+                    planets.at(j).yPositions.last() < minBounder.y() || planets.at(j).yPositions.last() > maxBounder.y())
+                {
                     running = false;
+                    status.values.append(j);
+                }
             }
         }
         i++;
     }
-    samples = i;
+    if (i < samples) {
+        status.code = CalcStatus::OutOfRange;
+        status.values.prepend(i);
+        samples = i;
+    }
     stop(); //на всякий случай
     emit finished();
 }
@@ -147,13 +169,10 @@ void OrbitCalculator::save()
     }
     file.close();
 
-    for (int i = 0; i < planets.size(); i++)
+    for (int i = 0; i < planets.size(); i++) {
         if (planets.at(i).isStatic == false) {
             planets[i].xPositions.clear();
             planets[i].yPositions.clear();
-            planets[i].xPositions.append(planets.at(i).startPosition.x());
-            planets[i].yPositions.append(planets.at(i).startPosition.y());
-            planets[i].currentPosition = planets.at(i).startPosition;
-            planets[i].currentSpeed = planets.at(i).startSpeed;
         }
+    }
 }
