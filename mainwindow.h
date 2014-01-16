@@ -30,7 +30,7 @@ private:
     Ui::MainWindow *ui;
     OrbitCalculator* orbitCalc;
     bool editing;
-    QPalette defaultPalette;
+    QString defaultStyle;
 
 private slots:
     void addPlanet();

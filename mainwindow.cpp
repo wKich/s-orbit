@@ -6,8 +6,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    defaultPalette.setColor(QPalette::Button, Qt::white);
-    ui->colorButton->setPalette(defaultPalette);
+    defaultStyle = "border: none; background-color: #FFFFFF;";
+    ui->colorButton->setStyleSheet(defaultStyle);
     editing = false;
     QThread* thread = new QThread;
     orbitCalc = new OrbitCalculator;
@@ -119,7 +119,7 @@ void MainWindow::addPlanet()
         ui->ySpeedLabel->setPalette(this->palette());
         ui->ySpeedLineEdit->setPalette(this->palette());
     }
-    QColor color = ui->colorButton->palette().color(QPalette::Button);
+    QColor color = QColor(ui->colorButton->styleSheet().mid(32).left(7));
 
     if (allOk) {
         if (editing) {
@@ -162,7 +162,7 @@ void MainWindow::addPlanet()
         ui->xSpeedLineEdit->clear();
         ui->ySpeedLineEdit->clear();
         ui->isStaticCheckBox->setChecked(false);
-        ui->colorButton->setPalette(defaultPalette);
+        ui->colorButton->setStyleSheet(defaultStyle);
     }
 }
 
@@ -352,7 +352,7 @@ void MainWindow::editPlanet()
         ui->xSpeedLineEdit->clear();
         ui->ySpeedLineEdit->clear();
         ui->isStaticCheckBox->setChecked(false);
-        ui->colorButton->setPalette(defaultPalette);
+        ui->colorButton->setStyleSheet(defaultStyle);
         ui->addEditPlanetButton->setText("Add");
     } else {
         editing = true;
@@ -368,20 +368,20 @@ void MainWindow::editPlanet()
             ui->ySpeedLineEdit->clear();
             ui->isStaticCheckBox->setChecked(true);
         }
-        QPalette palette;
-        palette.setColor(QPalette::Button, ui->planetTableWidget->selectedItems().at(6)->backgroundColor());
-        ui->colorButton->setPalette(palette);
+        QString style("border: none; background-color: ");
+        style.append(ui->planetTableWidget->selectedItems().at(6)->backgroundColor().name() + ";");
+        ui->colorButton->setStyleSheet(style);
         ui->addEditPlanetButton->setText("Edit");
     }
 }
 
 void MainWindow::showColorDialog()
 {
-    QColor color = QColorDialog::getColor(ui->colorButton->palette().color(QPalette::Button), this, "Planet Color");
+    QColor color = QColorDialog::getColor(QColor(ui->colorButton->styleSheet().mid(32).left(7)), this, "Planet Color");
     if (color.isValid()) {
-        QPalette palette;
-        palette.setColor(QPalette::Button, color);
-        ui->colorButton->setPalette(palette);
+        QString style("border: none; background-color: ");
+        style.append(color.name() + ";");
+        ui->colorButton->setStyleSheet(style);
     }
 }
 
