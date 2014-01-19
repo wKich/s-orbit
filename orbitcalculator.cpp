@@ -15,26 +15,60 @@ OrbitCalculator::~OrbitCalculator()
 
 void OrbitCalculator::addPlanet(const float &mass, const QVector2D &pos, const QVector2D &speed, const bool &isStatic, const QColor &color)
 {
-    planets.append(Planet(mass, pos, speed, isStatic, color));
+    if (isStatic) {
+        staticPlanets.append(StaticPlanet(staticPlanets.size(), mass, pos, color));
+        planetPtrs.append(PlanetPtr(&staticPlanets.last(), isStatic));
+    } else {
+        dynamicPlanets.append(DynamicPlanet(dynamicPlanets.size(), mass, pos, speed, color));
+        planetPtrs.append(PlanetPtr(&dynamicPlanets.last(), isStatic));
+    }
 }
 
-void OrbitCalculator::modifyPlanet(const int &id, const float &mass, const QVector2D &curPos, const QVector2D &curSpeed, const bool &isStatic, const QColor &color)
+void OrbitCalculator::modifyPlanet(const int &id, const float &mass, const QVector2D &startPos, const QVector2D &startSpeed, const bool &isStatic, const QColor &color)
 {
-    planets[id].mass = mass;
-    planets[id].startPosition = curPos;
-    planets[id].startSpeed = curSpeed;
-    planets[id].isStatic = isStatic;
-    planets[id].color = color;
+    if (planetPtrs.at(id).isStatic != isStatic) {
+        if (planetPtrs.at(id).isStatic) {
+            //from static to dynamic
+            dynamicPlanets.append(DynamicPlanet(dynamicPlanets.size(), mass, startPos, startSpeed, color));
+            for (int i = planetPtrs.at(id).ptr->index + 1; i < staticPlanets.size(); i++)
+                staticPlanets[i].index--;
+            staticPlanets.removeAt(planetPtrs.at(id).ptr->index);
+            planetPtrs[id].ptr = &dynamicPlanets.last();
+        } else {
+            //from dynamic to static
+            staticPlanets.append(StaticPlanet(staticPlanets.size(), mass, startPos, color));
+            for (int i = planetPtrs.at(id).ptr->index + 1; i < dynamicPlanets.size(); i++)
+                dynamicPlanets[i].index--;
+            dynamicPlanets.removeAt(planetPtrs.at(id).ptr->index);
+            planetPtrs[id].ptr = &staticPlanets.last();
+        }
+        planetPtrs[id].isStatic = isStatic;
+    } else {
+        planetPtrs.at(id).ptr->mass = mass;
+        planetPtrs.at(id).ptr->startPosition = startPos;
+        planetPtrs.at(id).ptr->color = color;
+        if (planetPtrs.at(id).isStatic == false)
+            dynamicPlanets[planetPtrs.at(id).ptr->index].startSpeed = startSpeed;
+    }
 }
 
 void OrbitCalculator::removePlanet(const int &id)
 {
-    planets.removeAt(id);
+    if (planetPtrs.at(id).isStatic) {
+        for (int i = planetPtrs.at(id).ptr->index + 1; i < staticPlanets.size(); i++)
+            staticPlanets[i].index--;
+        staticPlanets.removeAt(planetPtrs.at(id).ptr->index);
+    } else {
+        for (int i = planetPtrs.at(id).ptr->index + 1; i < dynamicPlanets.size(); i++)
+            dynamicPlanets[i].index--;
+        dynamicPlanets.removeAt(planetPtrs.at(id).ptr->index);
+    }
+    planetPtrs.removeAt(id);
 }
 
-const Planet &OrbitCalculator::getPlanet(const int &id) const
+const DynamicPlanet &OrbitCalculator::getDynamicPlanet(const int &id) const
 {
-    return planets.at(id);
+    return dynamicPlanets.at(id);
 }
 
 bool OrbitCalculator::isRunning() const
@@ -51,14 +85,14 @@ void OrbitCalculator::start(const float &dt, const unsigned int &c, const QVecto
     samples = c;
     minBounder = min;
     maxBounder = max;
-    for (int i = 0; i < planets.size(); i++) {
-        planets[i].currentPosition = planets.at(i).startPosition;
-        planets[i].currentSpeed = planets.at(i).startSpeed;
-        if (planets.at(i).isStatic == false) {
-            planets[i].xPositions.reserve(samples);
-            planets[i].yPositions.reserve(samples);
-            planets[i].xPositions.append(planets.at(i).startPosition.x());
-            planets[i].yPositions.append(planets.at(i).startPosition.y());
+    for (int i = 0; i < planetPtrs.size(); i++) {
+        planetPtrs.at(i).ptr->currentPosition = planetPtrs.at(i).ptr->startPosition;
+        if (planetPtrs.at(i).isStatic == false) {
+            dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeed = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed;
+            dynamicPlanets[planetPtrs.at(i).ptr->index].xPositions.reserve(samples);
+            dynamicPlanets[planetPtrs.at(i).ptr->index].yPositions.reserve(samples);
+            dynamicPlanets[planetPtrs.at(i).ptr->index].xPositions.append(planetPtrs.at(i).ptr->startPosition.x());
+            dynamicPlanets[planetPtrs.at(i).ptr->index].yPositions.append(planetPtrs.at(i).ptr->startPosition.y());
         }
     }
     emit exec();
@@ -80,28 +114,26 @@ void OrbitCalculator::run()
     unsigned int i = 0;
     while (running && i < samples) {
         //Расчет параметров для каждой планеты
-        for (int j = 0; j < planets.size(); j++) {
-            if (planets.at(j).isStatic == false) {
-                QVector2D r;
-                float df;
-                QVector2D f;
-                for (int k = 0; k < planets.size(); k++) {
-                    if (k != j) {
-                        r = planets.at(k).currentPosition - planets.at(j).currentPosition;
-                        df = planets.at(k).mass * planets.at(j).mass / r.lengthSquared();
-                        f += r / r.length() * df;
-                    }
+        for (int j = 0; j < dynamicPlanets.size(); j++) {
+            QVector2D r;
+            float df;
+            QVector2D f;
+            for (int k = 0; k < planetPtrs.size(); k++) {
+                if (planetPtrs.at(k).ptr != &dynamicPlanets.at(j)) {
+                    r = planetPtrs.at(k).ptr->currentPosition - dynamicPlanets.at(j).currentPosition;
+                    df = planetPtrs.at(k).ptr->mass * dynamicPlanets.at(j).mass / r.lengthSquared();
+                    f += r / r.length() * df;
                 }
-                planets[j].currentSpeed += f / planets.at(j).mass * deltaT;
-                planets[j].currentPosition += planets.at(j).currentSpeed * deltaT;
-                planets[j].xPositions.append(planets.at(j).currentPosition.x());
-                planets[j].yPositions.append(planets.at(j).currentPosition.y());
-                if (planets.at(j).xPositions.last() < minBounder.x() || planets.at(j).xPositions.last() > maxBounder.x() ||
-                    planets.at(j).yPositions.last() < minBounder.y() || planets.at(j).yPositions.last() > maxBounder.y())
-                {
-                    running = false;
-                    status.values.append(j);
-                }
+            }
+            dynamicPlanets[j].currentSpeed += f / dynamicPlanets.at(j).mass * deltaT;
+            dynamicPlanets[j].currentPosition += dynamicPlanets.at(j).currentSpeed * deltaT;
+            dynamicPlanets[j].xPositions.append(dynamicPlanets.at(j).currentPosition.x());
+            dynamicPlanets[j].yPositions.append(dynamicPlanets.at(j).currentPosition.y());
+            if (dynamicPlanets.at(j).xPositions.last() < minBounder.x() || dynamicPlanets.at(j).xPositions.last() > maxBounder.x() ||
+                dynamicPlanets.at(j).yPositions.last() < minBounder.y() || dynamicPlanets.at(j).yPositions.last() > maxBounder.y())
+            {
+                running = false;
+                status.values.append(j);
             }
         }
         i++;
@@ -130,49 +162,37 @@ void OrbitCalculator::save()
     file.write(reinterpret_cast<char*>(&x), sizeof(float));
     file.write(reinterpret_cast<char*>(&y), sizeof(float));
     file.write(reinterpret_cast<char*>(&samples), sizeof(unsigned int));
-    unsigned int staticPlanets = 0;
-    for (int i = 0; i < planets.size(); i++) {
-        if (planets.at(i).isStatic)
-            staticPlanets++;
+    unsigned int sPlanets = staticPlanets.size();
+    file.write(reinterpret_cast<char*>(&sPlanets), sizeof(unsigned int));
+    for (int i = 0; i < staticPlanets.size(); i++) {
+        QRgb color = staticPlanets.at(i).color.rgb();
+        file.write(reinterpret_cast<char*>(&color), sizeof(QRgb));
     }
-    file.write(reinterpret_cast<char*>(&staticPlanets), sizeof(unsigned int));
-    for (int i = 0; i < planets.size(); i++) {
-        if (planets.at(i).isStatic) {
-            QRgb color = planets.at(i).color.rgb();
-            file.write(reinterpret_cast<char*>(&color), sizeof(QRgb));
-        }
+    for (int i = 0; i < staticPlanets.size(); i++) {
+        x = staticPlanets.at(i).startPosition.x();
+        y = staticPlanets.at(i).startPosition.y();
+        file.write(reinterpret_cast<char*>(&x), sizeof(float));
+        file.write(reinterpret_cast<char*>(&y), sizeof(float));
     }
-    for (int i = 0; i < planets.size(); i++) {
-        if (planets.at(i).isStatic) {
-            file.write(reinterpret_cast<const char*>(planets.at(i).xPositions.constData()), sizeof(float));
-            file.write(reinterpret_cast<const char*>(planets.at(i).yPositions.constData()), sizeof(float));
-        }
-    }
-    unsigned int dynamicPlanets = planets.size() - staticPlanets;
-    file.write(reinterpret_cast<char*>(&dynamicPlanets), sizeof(unsigned int));
-    for (int i = 0; i < planets.size(); i++) {
-        if (planets.at(i).isStatic == false) {
-            QRgb color = planets.at(i).color.rgb();
-            file.write(reinterpret_cast<char*>(&color), sizeof(QRgb));
-        }
+    unsigned int dPlanets = dynamicPlanets.size();
+    file.write(reinterpret_cast<char*>(&dPlanets), sizeof(unsigned int));
+    for (int i = 0; i < dynamicPlanets.size(); i++) {
+        QRgb color = dynamicPlanets.at(i).color.rgb();
+        file.write(reinterpret_cast<char*>(&color), sizeof(QRgb));
     }
     //|------------------------------------------------------------------------------------
     //| Planet01.x1 | Planet01.y1 | Planet02.x1 | Planet02.y1 | Planet01.x2 | Planet01.y2 |  .....
     //|------------------------------------------------------------------------------------
     for (int j = 0; j < samples; j++) {
-        for (int i = 0; i < planets.size(); i++) {
-            if (planets.at(i).isStatic == false) {
-                file.write(reinterpret_cast<const char*>(planets.at(i).xPositions.constData() + j), sizeof(float));
-                file.write(reinterpret_cast<const char*>(planets.at(i).yPositions.constData() + j), sizeof(float));
-            }
+        for (int i = 0; i < dynamicPlanets.size(); i++) {
+            file.write(reinterpret_cast<const char*>(dynamicPlanets.at(i).xPositions.constData() + j), sizeof(float));
+            file.write(reinterpret_cast<const char*>(dynamicPlanets.at(i).yPositions.constData() + j), sizeof(float));
         }
     }
     file.close();
 
-    for (int i = 0; i < planets.size(); i++) {
-        if (planets.at(i).isStatic == false) {
-            planets[i].xPositions.clear();
-            planets[i].yPositions.clear();
-        }
+    for (int i = 0; i < dynamicPlanets.size(); i++) {
+        dynamicPlanets[i].xPositions.clear();
+        dynamicPlanets[i].yPositions.clear();
     }
 }

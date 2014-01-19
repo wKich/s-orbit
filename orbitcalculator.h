@@ -9,32 +9,45 @@
 #include <QDateTime>
 #include <QColor>
 
-struct Planet {
+struct StaticPlanet {
+    int index;
     float mass;
-    QVector<float> xPositions;
-    QVector<float> yPositions;
     QVector2D startPosition;
-    QVector2D currentPosition;
-    QVector2D startSpeed;
-    QVector2D currentSpeed;
-    bool isStatic;
+    QVector2D currentPosition;  //for backport calculation
     QColor color;
 
-    Planet() {}
-    Planet(const float &m, const QVector2D &pos, const QVector2D &speed, const bool &stat, const QColor &c) :
+    StaticPlanet(){}
+    StaticPlanet(const int &id, const float &m, const QVector2D &pos, const QColor &c) :
+        index(id),
         mass(m),
         startPosition(pos),
-        startSpeed(speed),
-        isStatic(stat),
         color(c)
     {}
-    Planet(const Planet &p) :
+    StaticPlanet(const StaticPlanet &p) :
+        index(p.index),
         mass(p.mass),
         startPosition(p.startPosition),
-        startSpeed(p.startSpeed),
-        isStatic(p.isStatic),
         color(p.color)
     {}
+    virtual ~StaticPlanet(){}
+};
+
+struct DynamicPlanet : StaticPlanet {
+    QVector<float> xPositions;
+    QVector<float> yPositions;
+    QVector2D startSpeed;
+    QVector2D currentSpeed;
+
+    DynamicPlanet() {}
+    DynamicPlanet(const int &id, const float &m, const QVector2D &pos, const QVector2D &speed, const QColor &c) :
+        StaticPlanet(id, m, pos, c),
+        startSpeed(speed)
+    {}
+    DynamicPlanet(const DynamicPlanet &p) :
+        StaticPlanet(p.index, p.mass, p.startPosition, p.color),
+        startSpeed(p.startSpeed)
+    {}
+    ~DynamicPlanet(){}
 };
 
 struct CalcStatus {
@@ -61,9 +74,9 @@ public:
     explicit OrbitCalculator(QObject* parent = 0);
     ~OrbitCalculator();
     void addPlanet(const float &mass, const QVector2D &pos, const QVector2D &curSpeed, const bool &isStatic, const QColor &color);
-    void modifyPlanet(const int &id, const float &mass, const QVector2D &curPos, const QVector2D &curSpeed, const bool &isStatic, const QColor &color);
+    void modifyPlanet(const int &id, const float &mass, const QVector2D &startPos, const QVector2D &startSpeed, const bool &isStatic, const QColor &color);
     void removePlanet(const int &id);
-    const Planet & getPlanet(const int &id) const;
+    const DynamicPlanet & getDynamicPlanet(const int &id) const;
     bool isRunning() const;
     void start(const float &dt, const unsigned int &c, const QVector2D &min, const QVector2D &max);
     void stop();
@@ -74,7 +87,24 @@ signals:
     void finished();
 
 private:
-    QVector<Planet> planets;
+    struct PlanetPtr {
+        bool isStatic;
+        StaticPlanet* ptr;
+
+        PlanetPtr() {}
+        PlanetPtr(StaticPlanet* p, const bool &s) :
+            isStatic(s),
+            ptr(p)
+        {}
+        PlanetPtr(const PlanetPtr &p) :
+            isStatic(p.isStatic),
+            ptr(p.ptr)
+        {}
+    };
+
+    QList<StaticPlanet> staticPlanets;
+    QList<DynamicPlanet> dynamicPlanets;
+    QList<PlanetPtr> planetPtrs;
     bool running;
     CalcStatus status;
 

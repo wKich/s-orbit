@@ -396,7 +396,7 @@ void MainWindow::showCalculationStatus()
     case CalcStatus::OutOfRange:
         msg.append("Out of range:\n");
         for (int i = 1; i < status.values.size(); i++) {
-            QVector2D pos = orbitCalc->getPlanet(status.values.at(i)).currentPosition;
+            QVector2D pos = orbitCalc->getDynamicPlanet(status.values.at(i)).currentPosition;
             msg.append("Planet_" + QString::number(status.values.at(i)) + " (" + QString::number(pos.x()) + ", " + QString::number(pos.y()) + ")\n");
         }
         msg.append("\n");
