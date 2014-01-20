@@ -86,9 +86,11 @@ void OrbitCalculator::start(const float &dt, const unsigned int &c, const QVecto
     minBounder = min;
     maxBounder = max;
     for (int i = 0; i < planetPtrs.size(); i++) {
-        planetPtrs.at(i).ptr->currentPosition = planetPtrs.at(i).ptr->startPosition;
+        planetPtrs.at(i).ptr->currentPositionX = planetPtrs.at(i).ptr->startPosition.x();
+        planetPtrs.at(i).ptr->currentPositionY = planetPtrs.at(i).ptr->startPosition.y();
         if (planetPtrs.at(i).isStatic == false) {
-            dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeed = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed;
+            dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeedX = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed.x();
+            dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeedY = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed.y();
             dynamicPlanets[planetPtrs.at(i).ptr->index].xPositions.reserve(samples);
             dynamicPlanets[planetPtrs.at(i).ptr->index].yPositions.reserve(samples);
             dynamicPlanets[planetPtrs.at(i).ptr->index].xPositions.append(planetPtrs.at(i).ptr->startPosition.x());
@@ -112,25 +114,31 @@ void OrbitCalculator::run()
 {
     running = true;
     unsigned int i = 0;
+    double dr, rx, ry;
+    double df, fx, fy;
     while (running && i < samples) {
         //Расчет параметров для каждой планеты
         for (int j = 0; j < dynamicPlanets.size(); j++) {
-            QVector2D r;
-            float df;
-            QVector2D f;
+            fx = 0;
+            fy = 0;
             for (int k = 0; k < planetPtrs.size(); k++) {
                 if (planetPtrs.at(k).ptr != &dynamicPlanets.at(j)) {
-                    r = planetPtrs.at(k).ptr->currentPosition - dynamicPlanets.at(j).currentPosition;
-                    df = planetPtrs.at(k).ptr->mass * dynamicPlanets.at(j).mass / r.lengthSquared();
-                    f += r / r.length() * df;
+                    rx = planetPtrs.at(k).ptr->currentPositionX - dynamicPlanets.at(j).currentPositionX;
+                    ry = planetPtrs.at(k).ptr->currentPositionY - dynamicPlanets.at(j).currentPositionY;
+                    dr = sqrt(rx*rx + ry*ry);
+                    df = planetPtrs.at(k).ptr->mass * dynamicPlanets.at(j).mass / (dr*dr);
+                    fx += rx / dr * df;
+                    fy += ry / dr * df;
                 }
             }
-            dynamicPlanets[j].currentSpeed += f / dynamicPlanets.at(j).mass * deltaT;
-            dynamicPlanets[j].currentPosition += dynamicPlanets.at(j).currentSpeed * deltaT;
-            dynamicPlanets[j].xPositions.append(dynamicPlanets.at(j).currentPosition.x());
-            dynamicPlanets[j].yPositions.append(dynamicPlanets.at(j).currentPosition.y());
-            if (dynamicPlanets.at(j).xPositions.last() < minBounder.x() || dynamicPlanets.at(j).xPositions.last() > maxBounder.x() ||
-                dynamicPlanets.at(j).yPositions.last() < minBounder.y() || dynamicPlanets.at(j).yPositions.last() > maxBounder.y())
+            dynamicPlanets[j].currentSpeedX += fx / dynamicPlanets.at(j).mass * deltaT;
+            dynamicPlanets[j].currentSpeedY += fy / dynamicPlanets.at(j).mass * deltaT;
+            dynamicPlanets[j].currentPositionX += dynamicPlanets.at(j).currentSpeedX * deltaT;
+            dynamicPlanets[j].currentPositionY += dynamicPlanets.at(j).currentSpeedY * deltaT;
+            dynamicPlanets[j].xPositions.append(dynamicPlanets.at(j).currentPositionX);
+            dynamicPlanets[j].yPositions.append(dynamicPlanets.at(j).currentPositionY);
+            if (dynamicPlanets.at(j).currentPositionX < minBounder.x() || dynamicPlanets.at(j).currentPositionX > maxBounder.x() ||
+                dynamicPlanets.at(j).currentPositionY < minBounder.y() || dynamicPlanets.at(j).currentPositionY > maxBounder.y())
             {
                 running = false;
                 status.values.append(j);

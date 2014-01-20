@@ -13,7 +13,8 @@ struct StaticPlanet {
     int index;
     float mass;
     QVector2D startPosition;
-    QVector2D currentPosition;  //for backport calculation
+    double currentPositionX;    //for backport calculation
+    double currentPositionY;    //for backport calculation
     QColor color;
 
     StaticPlanet(){}
@@ -36,7 +37,8 @@ struct DynamicPlanet : StaticPlanet {
     QVector<float> xPositions;
     QVector<float> yPositions;
     QVector2D startSpeed;
-    QVector2D currentSpeed;
+    double currentSpeedX;
+    double currentSpeedY;
 
     DynamicPlanet() {}
     DynamicPlanet(const int &id, const float &m, const QVector2D &pos, const QVector2D &speed, const QColor &c) :
