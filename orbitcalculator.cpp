@@ -116,6 +116,8 @@ void OrbitCalculator::run()
     unsigned int i = 0;
     double dr, rx, ry;
     double df, fx, fy;
+    float dx = (maxBounder.x() - minBounder.x()) / 1920.0;
+    float dy = (maxBounder.y() - minBounder.y()) / 1080.0;
     while (running && i < samples) {
         //Расчет параметров для каждой планеты
         for (int j = 0; j < dynamicPlanets.size(); j++) {
@@ -135,8 +137,16 @@ void OrbitCalculator::run()
             dynamicPlanets[j].currentSpeedY += fy / dynamicPlanets.at(j).mass * deltaT;
             dynamicPlanets[j].currentPositionX += dynamicPlanets.at(j).currentSpeedX * deltaT;
             dynamicPlanets[j].currentPositionY += dynamicPlanets.at(j).currentSpeedY * deltaT;
-            dynamicPlanets[j].xPositions.append(dynamicPlanets.at(j).currentPositionX);
-            dynamicPlanets[j].yPositions.append(dynamicPlanets.at(j).currentPositionY);
+            if (qAbs(dynamicPlanets.at(j).currentPositionX - dynamicPlanets.at(i).xPositions.last()) < dx &&
+                qAbs(dynamicPlanets.at(j).currentPositionY - dynamicPlanets.at(i).yPositions.last()) < dy &&
+                dynamicPlanets.at(j).samples.last() < 255)
+            {
+                dynamicPlanets[j].samples.last()++;
+            } else {
+                dynamicPlanets[j].xPositions.append(dynamicPlanets.at(j).currentPositionX);
+                dynamicPlanets[j].yPositions.append(dynamicPlanets.at(j).currentPositionY);
+                dynamicPlanets[j].samples.append(1);
+            }
             if (dynamicPlanets.at(j).currentPositionX < minBounder.x() || dynamicPlanets.at(j).currentPositionX > maxBounder.x() ||
                 dynamicPlanets.at(j).currentPositionY < minBounder.y() || dynamicPlanets.at(j).currentPositionY > maxBounder.y())
             {
@@ -188,13 +198,20 @@ void OrbitCalculator::save()
         QRgb color = dynamicPlanets.at(i).color.rgb();
         file.write(reinterpret_cast<char*>(&color), sizeof(QRgb));
     }
-    //|------------------------------------------------------------------------------------
-    //| Planet01.x1 | Planet01.y1 | Planet02.x1 | Planet02.y1 | Planet01.x2 | Planet01.y2 |  .....
-    //|------------------------------------------------------------------------------------
-    for (int j = 0; j < samples; j++) {
-        for (int i = 0; i < dynamicPlanets.size(); i++) {
-            file.write(reinterpret_cast<const char*>(dynamicPlanets.at(i).xPositions.constData() + j), sizeof(float));
-            file.write(reinterpret_cast<const char*>(dynamicPlanets.at(i).yPositions.constData() + j), sizeof(float));
+    //|------------------------------------------------------------------------------------------------------
+    //| num | Planet01.x1 | Planet01.y1 | num | Planet02.x1 | Planet02.y1 | num | Planet01.x2 | Planet01.y2 |  .....
+    //|------------------------------------------------------------------------------------------------------
+    unsigned int maxPlanetSamples = 0;
+    for (int i = 0; i < dynamicPlanets.size(); i++)
+        if (maxPlanetSamples < dynamicPlanets.at(i).samples.size())
+            maxPlanetSamples = dynamicPlanets.at(i).samples.size();
+    for (int i = 0; i < maxPlanetSamples; i++) {
+        for (int j = 0; j < dynamicPlanets.size(); j++) {
+            if (i < dynamicPlanets.at(j).samples.size()) {
+                file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).samples.constData() + i), sizeof(unsigned char));
+                file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).xPositions.constData() + i), sizeof(float));
+                file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).yPositions.constData() + i), sizeof(float));
+            }
         }
     }
     file.close();

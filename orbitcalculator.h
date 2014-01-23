@@ -36,6 +36,7 @@ struct StaticPlanet {
 struct DynamicPlanet : StaticPlanet {
     QVector<float> xPositions;
     QVector<float> yPositions;
+    QVector<unsigned char> samples;
     QVector2D startSpeed;
     double currentSpeedX;
     double currentSpeedY;
