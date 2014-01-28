@@ -205,12 +205,16 @@ void OrbitCalculator::save()
     for (int i = 0; i < dynamicPlanets.size(); i++)
         if (maxPlanetSamples < dynamicPlanets.at(i).samples.size())
             maxPlanetSamples = dynamicPlanets.at(i).samples.size();
+    QByteArray zeroBytes;
+    zeroBytes.fill(0, sizeof(unsigned char) + 2 * sizeof(float));
     for (int i = 0; i < maxPlanetSamples; i++) {
         for (int j = 0; j < dynamicPlanets.size(); j++) {
             if (i < dynamicPlanets.at(j).samples.size()) {
                 file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).samples.constData() + i), sizeof(unsigned char));
                 file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).xPositions.constData() + i), sizeof(float));
                 file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).yPositions.constData() + i), sizeof(float));
+            } else {
+                file.write(zeroBytes);
             }
         }
     }
