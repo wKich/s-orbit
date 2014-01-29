@@ -93,6 +93,7 @@ void OrbitCalculator::start(const float &dt, const unsigned int &c, const QVecto
             dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeedY = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed.y();
             dynamicPlanets[planetPtrs.at(i).ptr->index].positions.reserve(samples);
             dynamicPlanets[planetPtrs.at(i).ptr->index].positions.append(planetPtrs.at(i).ptr->startPosition);
+            dynamicPlanets[planetPtrs.at(i).ptr->index].samples.append(1);
         }
     }
     emit exec();
@@ -135,8 +136,8 @@ void OrbitCalculator::run()
             dynamicPlanets[j].currentSpeedY += fy / dynamicPlanets.at(j).mass * deltaT;
             dynamicPlanets[j].currentPositionX += dynamicPlanets.at(j).currentSpeedX * deltaT;
             dynamicPlanets[j].currentPositionY += dynamicPlanets.at(j).currentSpeedY * deltaT;
-            if (qAbs(dynamicPlanets.at(j).currentPositionX - dynamicPlanets.at(i).positions.last().x()) < dx &&
-                qAbs(dynamicPlanets.at(j).currentPositionY - dynamicPlanets.at(i).positions.last().y()) < dy &&
+            if (qAbs(dynamicPlanets.at(j).currentPositionX - dynamicPlanets.at(j).positions.last().x()) < dx &&
+                qAbs(dynamicPlanets.at(j).currentPositionY - dynamicPlanets.at(j).positions.last().y()) < dy &&
                 dynamicPlanets.at(j).samples.last() < 255)
             {
                 dynamicPlanets[j].samples.last()++;
@@ -203,7 +204,7 @@ void OrbitCalculator::save()
         if (maxPlanetSamples < dynamicPlanets.at(i).samples.size())
             maxPlanetSamples = dynamicPlanets.at(i).samples.size();
     QByteArray zeroBytes;
-    zeroBytes.fill(0, sizeof(unsigned char) + 2 * sizeof(float));
+    zeroBytes.fill(0, sizeof(unsigned char) + sizeof(QVector2D));
     for (int i = 0; i < maxPlanetSamples; i++) {
         for (int j = 0; j < dynamicPlanets.size(); j++) {
             if (i < dynamicPlanets.at(j).samples.size()) {
