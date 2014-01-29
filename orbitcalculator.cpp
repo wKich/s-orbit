@@ -199,7 +199,7 @@ void OrbitCalculator::save()
     //|------------------------------------------------------------------------------------------------------
     //| num | Planet01.x1 | Planet01.y1 | num | Planet02.x1 | Planet02.y1 | num | Planet01.x2 | Planet01.y2 |  .....
     //|------------------------------------------------------------------------------------------------------
-    unsigned int maxPlanetSamples = 0;
+    int maxPlanetSamples = 0;
     for (int i = 0; i < dynamicPlanets.size(); i++)
         if (maxPlanetSamples < dynamicPlanets.at(i).samples.size())
             maxPlanetSamples = dynamicPlanets.at(i).samples.size();
@@ -219,5 +219,6 @@ void OrbitCalculator::save()
 
     for (int i = 0; i < dynamicPlanets.size(); i++) {
         dynamicPlanets[i].positions.clear();
+        dynamicPlanets[i].samples.clear();
     }
 }
