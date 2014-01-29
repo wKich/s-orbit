@@ -91,10 +91,8 @@ void OrbitCalculator::start(const float &dt, const unsigned int &c, const QVecto
         if (planetPtrs.at(i).isStatic == false) {
             dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeedX = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed.x();
             dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeedY = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed.y();
-            dynamicPlanets[planetPtrs.at(i).ptr->index].xPositions.reserve(samples);
-            dynamicPlanets[planetPtrs.at(i).ptr->index].yPositions.reserve(samples);
-            dynamicPlanets[planetPtrs.at(i).ptr->index].xPositions.append(planetPtrs.at(i).ptr->startPosition.x());
-            dynamicPlanets[planetPtrs.at(i).ptr->index].yPositions.append(planetPtrs.at(i).ptr->startPosition.y());
+            dynamicPlanets[planetPtrs.at(i).ptr->index].positions.reserve(samples);
+            dynamicPlanets[planetPtrs.at(i).ptr->index].positions.append(planetPtrs.at(i).ptr->startPosition);
         }
     }
     emit exec();
@@ -137,14 +135,13 @@ void OrbitCalculator::run()
             dynamicPlanets[j].currentSpeedY += fy / dynamicPlanets.at(j).mass * deltaT;
             dynamicPlanets[j].currentPositionX += dynamicPlanets.at(j).currentSpeedX * deltaT;
             dynamicPlanets[j].currentPositionY += dynamicPlanets.at(j).currentSpeedY * deltaT;
-            if (qAbs(dynamicPlanets.at(j).currentPositionX - dynamicPlanets.at(i).xPositions.last()) < dx &&
-                qAbs(dynamicPlanets.at(j).currentPositionY - dynamicPlanets.at(i).yPositions.last()) < dy &&
+            if (qAbs(dynamicPlanets.at(j).currentPositionX - dynamicPlanets.at(i).positions.last().x()) < dx &&
+                qAbs(dynamicPlanets.at(j).currentPositionY - dynamicPlanets.at(i).positions.last().y()) < dy &&
                 dynamicPlanets.at(j).samples.last() < 255)
             {
                 dynamicPlanets[j].samples.last()++;
             } else {
-                dynamicPlanets[j].xPositions.append(dynamicPlanets.at(j).currentPositionX);
-                dynamicPlanets[j].yPositions.append(dynamicPlanets.at(j).currentPositionY);
+                dynamicPlanets[j].positions.append(QVector2D(dynamicPlanets.at(j).currentPositionX, dynamicPlanets.at(j).currentPositionY));
                 dynamicPlanets[j].samples.append(1);
             }
             if (dynamicPlanets.at(j).currentPositionX < minBounder.x() || dynamicPlanets.at(j).currentPositionX > maxBounder.x() ||
@@ -211,8 +208,7 @@ void OrbitCalculator::save()
         for (int j = 0; j < dynamicPlanets.size(); j++) {
             if (i < dynamicPlanets.at(j).samples.size()) {
                 file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).samples.constData() + i), sizeof(unsigned char));
-                file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).xPositions.constData() + i), sizeof(float));
-                file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).yPositions.constData() + i), sizeof(float));
+                file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).positions.constData() + i), sizeof(QVector2D));
             } else {
                 file.write(zeroBytes);
             }
@@ -221,7 +217,6 @@ void OrbitCalculator::save()
     file.close();
 
     for (int i = 0; i < dynamicPlanets.size(); i++) {
-        dynamicPlanets[i].xPositions.clear();
-        dynamicPlanets[i].yPositions.clear();
+        dynamicPlanets[i].positions.clear();
     }
 }
