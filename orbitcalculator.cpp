@@ -4,7 +4,7 @@ OrbitCalculator::OrbitCalculator(QObject *parent) :
     QObject(parent),
     running(false)
 {
-    samples = 0;
+    time = 0;
     connect(this, SIGNAL(exec()), this, SLOT(run()));
     connect(this, SIGNAL(finished()), this, SLOT(save()));
 }
@@ -76,13 +76,13 @@ bool OrbitCalculator::isRunning() const
     return running;
 }
 
-void OrbitCalculator::start(const float &dt, const unsigned int &c, const QVector2D &min, const QVector2D &max)
+void OrbitCalculator::start(const float &dt, const float &t, const QVector2D &min, const QVector2D &max)
 {
     status.code = CalcStatus::Ok;
     status.values.clear();
 
     deltaT = dt;
-    samples = c;
+    time = t;
     minBounder = min;
     maxBounder = max;
     for (int i = 0; i < planetPtrs.size(); i++) {
@@ -91,7 +91,6 @@ void OrbitCalculator::start(const float &dt, const unsigned int &c, const QVecto
         if (planetPtrs.at(i).isStatic == false) {
             dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeedX = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed.x();
             dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeedY = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed.y();
-            dynamicPlanets[planetPtrs.at(i).ptr->index].positions.reserve(samples);
             dynamicPlanets[planetPtrs.at(i).ptr->index].positions.append(planetPtrs.at(i).ptr->startPosition);
             dynamicPlanets[planetPtrs.at(i).ptr->index].samples.append(1);
         }
@@ -112,12 +111,12 @@ const CalcStatus & OrbitCalculator::getCalculationStatus() const
 void OrbitCalculator::run()
 {
     running = true;
-    unsigned int i = 0;
+    double t = 0;
     double dr, rx, ry;
     double df, fx, fy;
     float dx = (maxBounder.x() - minBounder.x()) / 1920.0;
     float dy = (maxBounder.y() - minBounder.y()) / 1080.0;
-    while (running && i < samples) {
+    while (running && t < time) {
         //Расчет параметров для каждой планеты
         for (int j = 0; j < dynamicPlanets.size(); j++) {
             fx = 0;
@@ -152,12 +151,12 @@ void OrbitCalculator::run()
                 status.values.append(j);
             }
         }
-        i++;
+        t += deltaT;
     }
-    if (i < samples) {
+    if (t < time) {
         status.code = CalcStatus::OutOfRange;
-        status.values.prepend(i);
-        samples = i;
+        status.time = t;
+        time = t;
     }
     stop(); //на всякий случай
     emit finished();
@@ -168,7 +167,8 @@ void OrbitCalculator::save()
     float x,y;
     QFile file(QDateTime::currentDateTime().toString("yyyy_MM_dd_hh_mm_ss") + "_points.dat");
     file.open(QFile::WriteOnly);
-    file.write(reinterpret_cast<char*>(&deltaT), sizeof(float));
+    file.write(reinterpret_cast<char*>(&deltaT), sizeof(double));
+    file.write(reinterpret_cast<char*>(&time), sizeof(double));
     x = minBounder.x();
     y = minBounder.y();
     file.write(reinterpret_cast<char*>(&x), sizeof(float));
@@ -177,7 +177,6 @@ void OrbitCalculator::save()
     y = maxBounder.y();
     file.write(reinterpret_cast<char*>(&x), sizeof(float));
     file.write(reinterpret_cast<char*>(&y), sizeof(float));
-    file.write(reinterpret_cast<char*>(&samples), sizeof(unsigned int));
     unsigned int sPlanets = staticPlanets.size();
     file.write(reinterpret_cast<char*>(&sPlanets), sizeof(unsigned int));
     for (int i = 0; i < staticPlanets.size(); i++) {

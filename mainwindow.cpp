@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(orbitCalc, SIGNAL(finished()), this, SLOT(enableControls()));
     connect(orbitCalc, SIGNAL(finished()), this, SLOT(showCalculationStatus()));
     connect(ui->isStaticCheckBox, SIGNAL(toggled(bool)), this, SLOT(enablePlanetSpeed(bool)));
-    connect(ui->countsLineEdit, SIGNAL(editingFinished()), this, SLOT(calculateResultSize()));
+    connect(ui->timeLineEdit, SIGNAL(editingFinished()), this, SLOT(calculateResultSize()));
     connect(ui->addEditPlanetButton, SIGNAL(clicked()), this, SLOT(calculateResultSize()));
     connect(ui->planetTableWidget, SIGNAL(itemSelectionChanged()), this, SLOT(editPlanet()));
     connect(ui->colorButton, SIGNAL(clicked()), this, SLOT(showColorDialog()));
@@ -178,7 +178,7 @@ void MainWindow::startStopCalculation()
 
         bool ok;
         bool allOk = true;
-        float deltaT = ui->deltaTimeLineEdit->text().toFloat(&ok);
+        double deltaT = ui->deltaTimeLineEdit->text().toDouble(&ok);
         if (ok) {
             ui->deltaTimeLabel->setPalette(this->palette());
             ui->deltaTimeLineEdit->setPalette(this->palette());
@@ -187,14 +187,14 @@ void MainWindow::startStopCalculation()
             ui->deltaTimeLabel->setPalette(invalidPalette);
             ui->deltaTimeLineEdit->setPalette(invalidPalette);
         }
-        unsigned int count = ui->countsLineEdit->text().toUInt(&ok);
+        double time = ui->timeLineEdit->text().toDouble(&ok);
         if (ok) {
-            ui->countsLabel->setPalette(this->palette());
-            ui->countsLineEdit->setPalette(this->palette());
+            ui->timeLabel->setPalette(this->palette());
+            ui->timeLineEdit->setPalette(this->palette());
         } else {
             allOk = false;
-            ui->countsLabel->setPalette(invalidPalette);
-            ui->countsLineEdit->setPalette(invalidPalette);
+            ui->timeLabel->setPalette(invalidPalette);
+            ui->timeLineEdit->setPalette(invalidPalette);
         }
         QVector2D minBounder;
         minBounder.setX(ui->xMinLineEdit->text().toFloat(&ok));
@@ -251,8 +251,8 @@ void MainWindow::startStopCalculation()
             ui->addEditPlanetButton->setEnabled(false);
             ui->deltaTimeLabel->setEnabled(false);
             ui->deltaTimeLineEdit->setEnabled(false);
-            ui->countsLabel->setEnabled(false);
-            ui->countsLineEdit->setEnabled(false);
+            ui->timeLabel->setEnabled(false);
+            ui->timeLineEdit->setEnabled(false);
             ui->xMinLabel->setEnabled(false);
             ui->xMinLineEdit->setEnabled(false);
             ui->yMinLabel->setEnabled(false);
@@ -262,7 +262,7 @@ void MainWindow::startStopCalculation()
             ui->yMaxLabel->setEnabled(false);
             ui->yMaxLineEdit->setEnabled(false);
             ui->calcButton->setText("Stop Calc");
-            orbitCalc->start(deltaT, count, minBounder, maxBounder);
+            orbitCalc->start(deltaT, time, minBounder, maxBounder);
         }
     }
 }
@@ -299,8 +299,8 @@ void MainWindow::enableControls()
     ui->addEditPlanetButton->setEnabled(true);
     ui->deltaTimeLabel->setEnabled(true);
     ui->deltaTimeLineEdit->setEnabled(true);
-    ui->countsLabel->setEnabled(true);
-    ui->countsLineEdit->setEnabled(true);
+    ui->timeLabel->setEnabled(true);
+    ui->timeLineEdit->setEnabled(true);
     ui->xMinLabel->setEnabled(true);
     ui->xMinLineEdit->setEnabled(true);
     ui->yMinLabel->setEnabled(true);
@@ -315,15 +315,16 @@ void MainWindow::enableControls()
 void MainWindow::calculateResultSize()
 {
     bool ok;
-    unsigned int count = ui->countsLineEdit->text().toUInt(&ok);
-    if (ok && count > 0 && ui->planetTableWidget->rowCount() > 0) {
-        //deltaT + minBounder + maxBounder + staticCount + dynamicCount
-        float resultSize = sizeof(float) + 2 * sizeof(float) + 2 * sizeof(float) + sizeof(unsigned int) + sizeof(unsigned int);
+    double deltaT = ui->deltaTimeLineEdit->text().toDouble(&ok);
+    double time = ui->timeLineEdit->text().toDouble(&ok);
+    if (ok && deltaT > 0 && time > deltaT && ui->planetTableWidget->rowCount() > 0) {
+        //deltaT + time + minBounder + maxBounder + staticCount + dynamicCount
+        float resultSize = sizeof(double) + sizeof(double) + sizeof(QVector2D) + sizeof(QVector2D) + sizeof(unsigned int) + sizeof(unsigned int);
         for (int i = 0; i < ui->planetTableWidget->rowCount(); i++) {
             if (ui->planetTableWidget->item(i, 5)->data(Qt::DisplayRole).toString() == "true") {
-                resultSize += 2 * sizeof(float) + sizeof(QRgb);
+                resultSize += sizeof(QVector2D) + sizeof(QRgb);
             } else {
-                resultSize += 2 * count * sizeof(float) + sizeof(QRgb);
+                resultSize += time / deltaT * (sizeof(unsigned char) + sizeof(QVector2D)) + sizeof(QRgb);
             }
         }
         if (resultSize > 1024) {
@@ -395,12 +396,12 @@ void MainWindow::showCalculationStatus()
         break;
     case CalcStatus::OutOfRange:
         msg.append("Out of range:\n");
-        for (int i = 1; i < status.values.size(); i++) {
+        for (int i = 0; i < status.values.size(); i++) {
             QVector2D pos = QVector2D(orbitCalc->getDynamicPlanet(status.values.at(i)).currentPositionX, orbitCalc->getDynamicPlanet(status.values.at(i)).currentPositionY);
             msg.append("Planet_" + QString::number(status.values.at(i)) + " (" + QString::number(pos.x()) + ", " + QString::number(pos.y()) + ")\n");
         }
         msg.append("\n");
-        msg.append("Final samples: " + QString::number(status.values.first()));
+        msg.append("Full time: " + QString::number(status.time));
         QMessageBox::warning(this, "Calculation Status", msg);
         break;
     default:

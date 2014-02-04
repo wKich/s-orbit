@@ -60,9 +60,10 @@ struct CalcStatus {
 
     StatusCode code;
     QList<unsigned int> values;
+    double time;
     //if Code == OutOfRange
     //values contains id planets that were out of range
-    //first value is sample count
+    //time is full time from start to out of range
 
     CalcStatus() :
         code(CalcStatus::Ok)
@@ -80,7 +81,7 @@ public:
     void removePlanet(const int &id);
     const DynamicPlanet & getDynamicPlanet(const int &id) const;
     bool isRunning() const;
-    void start(const float &dt, const unsigned int &c, const QVector2D &min, const QVector2D &max);
+    void start(const float &dt, const float &t, const QVector2D &min, const QVector2D &max);
     void stop();
     const CalcStatus & getCalculationStatus() const;
 
@@ -110,8 +111,10 @@ private:
     bool running;
     CalcStatus status;
 
-    float deltaT;
-    unsigned int samples;
+    //must be time / deltaT <= 10E+15 (double)
+    //must be time / deltaT <= 10E+7 (float)
+    double deltaT;
+    double time;
     QVector2D minBounder;
     QVector2D maxBounder;
 
