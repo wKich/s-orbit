@@ -141,6 +141,9 @@ void OrbitCalculator::run()
             {
                 dynamicPlanets[j].samples.last()++;
             } else {
+                //~1Gb buffer for positions samples
+                if (dynamicPlanets[j].samples.size() >= (1024 * 1024 * 1024 / sizeof(QVector2D) / dynamicPlanets.size()) )
+                    save();
                 dynamicPlanets[j].positions.append(QVector2D(dynamicPlanets.at(j).currentPositionX, dynamicPlanets.at(j).currentPositionY));
                 dynamicPlanets[j].samples.append(1);
             }
@@ -164,37 +167,52 @@ void OrbitCalculator::run()
 
 void OrbitCalculator::save()
 {
-    float x,y;
-    QFile file(QDateTime::currentDateTime().toString("yyyy_MM_dd_hh_mm_ss") + "_points.dat");
-    file.open(QFile::WriteOnly);
-    file.write(reinterpret_cast<char*>(&deltaT), sizeof(double));
-    file.write(reinterpret_cast<char*>(&time), sizeof(double));
-    x = minBounder.x();
-    y = minBounder.y();
-    file.write(reinterpret_cast<char*>(&x), sizeof(float));
-    file.write(reinterpret_cast<char*>(&y), sizeof(float));
-    x = maxBounder.x();
-    y = maxBounder.y();
-    file.write(reinterpret_cast<char*>(&x), sizeof(float));
-    file.write(reinterpret_cast<char*>(&y), sizeof(float));
-    unsigned int sPlanets = staticPlanets.size();
-    file.write(reinterpret_cast<char*>(&sPlanets), sizeof(unsigned int));
-    for (int i = 0; i < staticPlanets.size(); i++) {
-        QRgb color = staticPlanets.at(i).color.rgb();
-        file.write(reinterpret_cast<char*>(&color), sizeof(QRgb));
+    //Warning
+    //if (maxPlanetSamples - minPlanetSamples) == (1024 * 1024 * 1024 / sizeof(QVector2D) / dynamicPlanets.size()) it may crash app
+    //Or solve it with add additional zero data
+    if (dataFile.isOpen() == false) {
+        float x,y;
+        dataFile.setFileName(QDateTime::currentDateTime().toString("yyyy_MM_dd_hh_mm_ss") + "_points.dat");
+        dataFile.open(QFile::ReadWrite);
+        dataFile.write(reinterpret_cast<char*>(&deltaT), sizeof(double));
+        dataFile.write(reinterpret_cast<char*>(&time), sizeof(double));
+        x = minBounder.x();
+        y = minBounder.y();
+        dataFile.write(reinterpret_cast<char*>(&x), sizeof(float));
+        dataFile.write(reinterpret_cast<char*>(&y), sizeof(float));
+        x = maxBounder.x();
+        y = maxBounder.y();
+        dataFile.write(reinterpret_cast<char*>(&x), sizeof(float));
+        dataFile.write(reinterpret_cast<char*>(&y), sizeof(float));
+        unsigned int sPlanets = staticPlanets.size();
+        dataFile.write(reinterpret_cast<char*>(&sPlanets), sizeof(unsigned int));
+        for (int i = 0; i < staticPlanets.size(); i++) {
+            QRgb color = staticPlanets.at(i).color.rgb();
+            dataFile.write(reinterpret_cast<char*>(&color), sizeof(QRgb));
+        }
+        for (int i = 0; i < staticPlanets.size(); i++) {
+            x = staticPlanets.at(i).startPosition.x();
+            y = staticPlanets.at(i).startPosition.y();
+            dataFile.write(reinterpret_cast<char*>(&x), sizeof(float));
+            dataFile.write(reinterpret_cast<char*>(&y), sizeof(float));
+        }
+        unsigned int dPlanets = dynamicPlanets.size();
+        dataFile.write(reinterpret_cast<char*>(&dPlanets), sizeof(unsigned int));
+        for (int i = 0; i < dynamicPlanets.size(); i++) {
+            QRgb color = dynamicPlanets.at(i).color.rgb();
+            dataFile.write(reinterpret_cast<char*>(&color), sizeof(QRgb));
+        }
     }
-    for (int i = 0; i < staticPlanets.size(); i++) {
-        x = staticPlanets.at(i).startPosition.x();
-        y = staticPlanets.at(i).startPosition.y();
-        file.write(reinterpret_cast<char*>(&x), sizeof(float));
-        file.write(reinterpret_cast<char*>(&y), sizeof(float));
+
+    QVector<QVector2D> positions;
+    QVector<unsigned char> samples;
+    if (running) {
+        for (int i = 0; i < dynamicPlanets.size(); i++) {
+            positions.append(dynamicPlanets[i].positions.takeLast());
+            samples.append(dynamicPlanets[i].samples.takeLast());
+        }
     }
-    unsigned int dPlanets = dynamicPlanets.size();
-    file.write(reinterpret_cast<char*>(&dPlanets), sizeof(unsigned int));
-    for (int i = 0; i < dynamicPlanets.size(); i++) {
-        QRgb color = dynamicPlanets.at(i).color.rgb();
-        file.write(reinterpret_cast<char*>(&color), sizeof(QRgb));
-    }
+
     //|------------------------------------------------------------------------------------------------------
     //| num | Planet01.x1 | Planet01.y1 | num | Planet02.x1 | Planet02.y1 | num | Planet01.x2 | Planet01.y2 |  .....
     //|------------------------------------------------------------------------------------------------------
@@ -202,22 +220,32 @@ void OrbitCalculator::save()
     for (int i = 0; i < dynamicPlanets.size(); i++)
         if (maxPlanetSamples < dynamicPlanets.at(i).samples.size())
             maxPlanetSamples = dynamicPlanets.at(i).samples.size();
-    QByteArray zeroBytes;
-    zeroBytes.fill(0, sizeof(unsigned char) + sizeof(QVector2D));
+    QByteArray zeroBytes(sizeof(unsigned char) + sizeof(QVector2D), 0);
     for (int i = 0; i < maxPlanetSamples; i++) {
         for (int j = 0; j < dynamicPlanets.size(); j++) {
             if (i < dynamicPlanets.at(j).samples.size()) {
-                file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).samples.constData() + i), sizeof(unsigned char));
-                file.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).positions.constData() + i), sizeof(QVector2D));
+                dataFile.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).samples.constData() + i), sizeof(unsigned char));
+                dataFile.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).positions.constData() + i), sizeof(QVector2D));
             } else {
-                file.write(zeroBytes);
+                dataFile.write(zeroBytes);
             }
         }
     }
-    file.close();
 
     for (int i = 0; i < dynamicPlanets.size(); i++) {
         dynamicPlanets[i].positions.clear();
         dynamicPlanets[i].samples.clear();
+    }
+
+    if (running) {
+        for (int i = 0; i < dynamicPlanets.size(); i++) {
+            dynamicPlanets[i].positions.append(positions.at(i));
+            dynamicPlanets[i].samples.append(samples.at(i));
+        }
+    } else {
+        dataFile.seek(sizeof(double));
+        dataFile.write(reinterpret_cast<char*>(&time), sizeof(double));
+        dataFile.close();
+        dataFile.setFileName("");
     }
 }

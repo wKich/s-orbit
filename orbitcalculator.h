@@ -118,6 +118,8 @@ private:
     QVector2D minBounder;
     QVector2D maxBounder;
 
+    QFile dataFile;
+
 private slots:
     void run();
     void save();
