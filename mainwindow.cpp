@@ -234,35 +234,30 @@ void MainWindow::startStopCalculation()
             ui->yMaxLabel->setPalette(invalidPalette);
             ui->yMaxLineEdit->setPalette(invalidPalette);
         }
+        QVector2D resolution;
+        resolution.setX(ui->widthLineEdit->text().toFloat(&ok));
+        if (ok) {
+            ui->widthLabel->setPalette(this->palette());
+            ui->widthLineEdit->setPalette(this->palette());
+        } else {
+            allOk = false;
+            ui->widthLabel->setPalette(invalidPalette);
+            ui->widthLineEdit->setPalette(invalidPalette);
+        }
+        resolution.setY(ui->heightLineEdit->text().toFloat(&ok));
+        if (ok) {
+            ui->heightLabel->setPalette(this->palette());
+            ui->heightLineEdit->setPalette(this->palette());
+        } else {
+            allOk = false;
+            ui->heightLabel->setPalette(invalidPalette);
+            ui->heightLineEdit->setPalette(invalidPalette);
+        }
 
         if (allOk) {
-            ui->massLabel->setEnabled(false);
-            ui->massLineEdit->setEnabled(false);
-            ui->xPositionLabel->setEnabled(false);
-            ui->xPositionLineEdit->setEnabled(false);
-            ui->yPositionLabel->setEnabled(false);
-            ui->yPositionLineEdit->setEnabled(false);
-            ui->xSpeedLabel->setEnabled(false);
-            ui->xSpeedLineEdit->setEnabled(false);
-            ui->ySpeedLabel->setEnabled(false);
-            ui->ySpeedLineEdit->setEnabled(false);
-            ui->isStaticCheckBox->setEnabled(false);
-            ui->colorButton->setEnabled(false);
-            ui->addEditPlanetButton->setEnabled(false);
-            ui->deltaTimeLabel->setEnabled(false);
-            ui->deltaTimeLineEdit->setEnabled(false);
-            ui->timeLabel->setEnabled(false);
-            ui->timeLineEdit->setEnabled(false);
-            ui->xMinLabel->setEnabled(false);
-            ui->xMinLineEdit->setEnabled(false);
-            ui->yMinLabel->setEnabled(false);
-            ui->yMinLineEdit->setEnabled(false);
-            ui->xMaxLabel->setEnabled(false);
-            ui->xMaxLineEdit->setEnabled(false);
-            ui->yMaxLabel->setEnabled(false);
-            ui->yMaxLineEdit->setEnabled(false);
+            ui->controlWidget->setEnabled(false);
             ui->calcButton->setText("Stop Calc");
-            orbitCalc->start(deltaT, time, minBounder, maxBounder);
+            orbitCalc->start(deltaT, time, minBounder, maxBounder, resolution);
         }
     }
 }
@@ -284,31 +279,7 @@ void MainWindow::enablePlanetSpeed(const bool &checked)
 
 void MainWindow::enableControls()
 {
-    ui->massLabel->setEnabled(true);
-    ui->massLineEdit->setEnabled(true);
-    ui->xPositionLabel->setEnabled(true);
-    ui->xPositionLineEdit->setEnabled(true);
-    ui->yPositionLabel->setEnabled(true);
-    ui->yPositionLineEdit->setEnabled(true);
-    ui->xSpeedLabel->setEnabled(true);
-    ui->xSpeedLineEdit->setEnabled(true);
-    ui->ySpeedLabel->setEnabled(true);
-    ui->ySpeedLineEdit->setEnabled(true);
-    ui->isStaticCheckBox->setEnabled(true);
-    ui->colorButton->setEnabled(true);
-    ui->addEditPlanetButton->setEnabled(true);
-    ui->deltaTimeLabel->setEnabled(true);
-    ui->deltaTimeLineEdit->setEnabled(true);
-    ui->timeLabel->setEnabled(true);
-    ui->timeLineEdit->setEnabled(true);
-    ui->xMinLabel->setEnabled(true);
-    ui->xMinLineEdit->setEnabled(true);
-    ui->yMinLabel->setEnabled(true);
-    ui->yMinLineEdit->setEnabled(true);
-    ui->xMaxLabel->setEnabled(true);
-    ui->xMaxLineEdit->setEnabled(true);
-    ui->yMaxLabel->setEnabled(true);
-    ui->yMaxLineEdit->setEnabled(true);
+    ui->controlWidget->setEnabled(true);
     ui->calcButton->setText("Calc");
 }
 
@@ -324,7 +295,7 @@ void MainWindow::calculateResultSize()
             if (ui->planetTableWidget->item(i, 5)->data(Qt::DisplayRole).toString() == "true") {
                 resultSize += sizeof(QVector2D) + sizeof(QRgb);
             } else {
-                resultSize += time / deltaT * (sizeof(unsigned char) + sizeof(QVector2D)) + sizeof(QRgb);
+                resultSize += time / deltaT * (sizeof(unsigned short) + sizeof(QVector2D)) + sizeof(QRgb);
             }
         }
         if (resultSize > 1024) {

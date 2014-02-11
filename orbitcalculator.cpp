@@ -76,7 +76,7 @@ bool OrbitCalculator::isRunning() const
     return running;
 }
 
-void OrbitCalculator::start(const float &dt, const float &t, const QVector2D &min, const QVector2D &max)
+void OrbitCalculator::start(const float &dt, const float &t, const QVector2D &min, const QVector2D &max, const QVector2D &res)
 {
     status.code = CalcStatus::Ok;
     status.values.clear();
@@ -85,6 +85,7 @@ void OrbitCalculator::start(const float &dt, const float &t, const QVector2D &mi
     time = t;
     minBounder = min;
     maxBounder = max;
+    resolution = res;
     for (int i = 0; i < planetPtrs.size(); i++) {
         planetPtrs.at(i).ptr->currentPositionX = planetPtrs.at(i).ptr->startPosition.x();
         planetPtrs.at(i).ptr->currentPositionY = planetPtrs.at(i).ptr->startPosition.y();
@@ -114,8 +115,8 @@ void OrbitCalculator::run()
     double t = 0;
     double dr, rx, ry;
     double df, fx, fy;
-    float dx = (maxBounder.x() - minBounder.x()) / 1920.0;
-    float dy = (maxBounder.y() - minBounder.y()) / 1080.0;
+    float dx = (maxBounder.x() - minBounder.x()) / resolution.x();
+    float dy = (maxBounder.y() - minBounder.y()) / resolution.y();
     while (running && t < time) {
         //Расчет параметров для каждой планеты
         for (int j = 0; j < dynamicPlanets.size(); j++) {
@@ -137,7 +138,7 @@ void OrbitCalculator::run()
             dynamicPlanets[j].currentPositionY += dynamicPlanets.at(j).currentSpeedY * deltaT;
             if (qAbs(dynamicPlanets.at(j).currentPositionX - dynamicPlanets.at(j).positions.last().x()) < dx &&
                 qAbs(dynamicPlanets.at(j).currentPositionY - dynamicPlanets.at(j).positions.last().y()) < dy &&
-                dynamicPlanets.at(j).samples.last() < 255)
+                dynamicPlanets.at(j).samples.last() < 65535)
             {
                 dynamicPlanets[j].samples.last()++;
             } else {
@@ -220,11 +221,11 @@ void OrbitCalculator::save()
     for (int i = 0; i < dynamicPlanets.size(); i++)
         if (maxPlanetSamples < dynamicPlanets.at(i).samples.size())
             maxPlanetSamples = dynamicPlanets.at(i).samples.size();
-    QByteArray zeroBytes(sizeof(unsigned char) + sizeof(QVector2D), 0);
+    QByteArray zeroBytes(sizeof(unsigned short) + sizeof(QVector2D), 0);
     for (int i = 0; i < maxPlanetSamples; i++) {
         for (int j = 0; j < dynamicPlanets.size(); j++) {
             if (i < dynamicPlanets.at(j).samples.size()) {
-                dataFile.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).samples.constData() + i), sizeof(unsigned char));
+                dataFile.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).samples.constData() + i), sizeof(unsigned short));
                 dataFile.write(reinterpret_cast<const char*>(dynamicPlanets.at(j).positions.constData() + i), sizeof(QVector2D));
             } else {
                 dataFile.write(zeroBytes);

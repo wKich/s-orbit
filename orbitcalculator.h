@@ -35,7 +35,7 @@ struct StaticPlanet {
 
 struct DynamicPlanet : StaticPlanet {
     QVector<QVector2D> positions;
-    QVector<unsigned char> samples;
+    QVector<unsigned short> samples;
     QVector2D startSpeed;
     double currentSpeedX;
     double currentSpeedY;
@@ -81,7 +81,7 @@ public:
     void removePlanet(const int &id);
     const DynamicPlanet & getDynamicPlanet(const int &id) const;
     bool isRunning() const;
-    void start(const float &dt, const float &t, const QVector2D &min, const QVector2D &max);
+    void start(const float &dt, const float &t, const QVector2D &min, const QVector2D &max, const QVector2D &res);
     void stop();
     const CalcStatus & getCalculationStatus() const;
 
@@ -117,6 +117,7 @@ private:
     double time;
     QVector2D minBounder;
     QVector2D maxBounder;
+    QVector2D resolution;
 
     QFile dataFile;
 
