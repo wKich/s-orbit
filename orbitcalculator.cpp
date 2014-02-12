@@ -2,7 +2,8 @@
 
 OrbitCalculator::OrbitCalculator(QObject *parent) :
     QObject(parent),
-    running(false)
+    running(false),
+    previewRender(nullptr)
 {
     time = 0;
     connect(this, SIGNAL(exec()), this, SLOT(run()));
@@ -69,6 +70,11 @@ void OrbitCalculator::removePlanet(const int &id)
 const DynamicPlanet &OrbitCalculator::getDynamicPlanet(const int &id) const
 {
     return dynamicPlanets.at(id);
+}
+
+const QImage &OrbitCalculator::getPreview() const
+{
+    return preview;
 }
 
 bool OrbitCalculator::isRunning() const
@@ -143,7 +149,7 @@ void OrbitCalculator::run()
                 dynamicPlanets[j].samples.last()++;
             } else {
                 //~1Gb buffer for positions samples
-                if (dynamicPlanets[j].samples.size() >= (1024 * 1024 * 1024 / sizeof(QVector2D) / dynamicPlanets.size()) )
+                if (dynamicPlanets[j].samples.size() >= (1024 * 1024 * 1024 / (sizeof(unsigned short) + sizeof(QVector2D)) / dynamicPlanets.size()) )
                     save();
                 dynamicPlanets[j].positions.append(QVector2D(dynamicPlanets.at(j).currentPositionX, dynamicPlanets.at(j).currentPositionY));
                 dynamicPlanets[j].samples.append(1);
@@ -168,6 +174,9 @@ void OrbitCalculator::run()
 
 void OrbitCalculator::save()
 {
+    if (!previewRender)
+        previewRender = new ImageRender(this);
+
     //Warning
     //if (maxPlanetSamples - minPlanetSamples) == (1024 * 1024 * 1024 / sizeof(QVector2D) / dynamicPlanets.size()) it may crash app
     //Or solve it with add additional zero data
@@ -232,6 +241,9 @@ void OrbitCalculator::save()
             }
         }
     }
+
+    preview = previewRender->getImage(minBounder, maxBounder, staticPlanets, dynamicPlanets);
+    preview.save(dataFile.fileName().left(dataFile.fileName().size() - 4) + ".png");
 
     for (int i = 0; i < dynamicPlanets.size(); i++) {
         dynamicPlanets[i].positions.clear();

@@ -359,11 +359,12 @@ void MainWindow::showColorDialog()
 
 void MainWindow::showCalculationStatus()
 {
+    StatusDialog* dialog = new StatusDialog(this);
     const CalcStatus status = orbitCalc->getCalculationStatus();
     QString msg;
     switch (status.code) {
     case CalcStatus::Ok:
-        QMessageBox::information(this, "Calculation Status", "Success");
+        dialog->showStatus("Calculation Status", "Success", orbitCalc->getPreview());
         break;
     case CalcStatus::OutOfRange:
         msg.append("Out of range:\n");
@@ -373,9 +374,10 @@ void MainWindow::showCalculationStatus()
         }
         msg.append("\n");
         msg.append("Full time: " + QString::number(status.time));
-        QMessageBox::warning(this, "Calculation Status", msg);
+        dialog->showStatus("Calculation Status", msg, orbitCalc->getPreview());
         break;
     default:
         break;
     }
+    dialog->deleteLater();
 }

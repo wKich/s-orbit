@@ -5,11 +5,11 @@
 #include <QKeyEvent>
 #include <QTableWidgetItem>
 #include <QColorDialog>
-#include <QMessageBox>
 
 #include <QDebug>
 
 #include "orbitcalculator.h"
+#include "statusdialog.h"
 
 namespace Ui {
 class MainWindow;

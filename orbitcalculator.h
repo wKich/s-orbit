@@ -7,50 +7,8 @@
 #include <QThread>
 #include <QFile>
 #include <QDateTime>
-#include <QColor>
 
-struct StaticPlanet {
-    int index;
-    float mass;
-    QVector2D startPosition;
-    double currentPositionX;    //for backport calculation
-    double currentPositionY;    //for backport calculation
-    QColor color;
-
-    StaticPlanet(){}
-    StaticPlanet(const int &id, const float &m, const QVector2D &pos, const QColor &c) :
-        index(id),
-        mass(m),
-        startPosition(pos),
-        color(c)
-    {}
-    StaticPlanet(const StaticPlanet &p) :
-        index(p.index),
-        mass(p.mass),
-        startPosition(p.startPosition),
-        color(p.color)
-    {}
-    virtual ~StaticPlanet(){}
-};
-
-struct DynamicPlanet : StaticPlanet {
-    QVector<QVector2D> positions;
-    QVector<unsigned short> samples;
-    QVector2D startSpeed;
-    double currentSpeedX;
-    double currentSpeedY;
-
-    DynamicPlanet() {}
-    DynamicPlanet(const int &id, const float &m, const QVector2D &pos, const QVector2D &speed, const QColor &c) :
-        StaticPlanet(id, m, pos, c),
-        startSpeed(speed)
-    {}
-    DynamicPlanet(const DynamicPlanet &p) :
-        StaticPlanet(p.index, p.mass, p.startPosition, p.color),
-        startSpeed(p.startSpeed)
-    {}
-    ~DynamicPlanet(){}
-};
+#include "imagerender.h"
 
 struct CalcStatus {
     enum StatusCode {
@@ -80,6 +38,7 @@ public:
     void modifyPlanet(const int &id, const float &mass, const QVector2D &startPos, const QVector2D &startSpeed, const bool &isStatic, const QColor &color);
     void removePlanet(const int &id);
     const DynamicPlanet & getDynamicPlanet(const int &id) const;
+    const QImage& getPreview() const;
     bool isRunning() const;
     void start(const float &dt, const float &t, const QVector2D &min, const QVector2D &max, const QVector2D &res);
     void stop();
@@ -119,6 +78,8 @@ private:
     QVector2D maxBounder;
     QVector2D resolution;
 
+    ImageRender* previewRender;
+    QImage preview;
     QFile dataFile;
 
 private slots:

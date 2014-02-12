@@ -11,12 +11,24 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = s-orbit
 TEMPLATE = app
 
+QMAKE_CXXFLAGS += -std=c++0x
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    orbitcalculator.cpp
+    orbitcalculator.cpp \
+    imagerender.cpp \
+    statusdialog.cpp
 
 HEADERS  += mainwindow.h \
-    orbitcalculator.h
+    orbitcalculator.h \
+    imagerender.h \
+    statusdialog.h
 
 FORMS    += mainwindow.ui
+
+RESOURCES += \
+    main.qrc
+
+OTHER_FILES += \
+    main.frag \
+    main.vert
