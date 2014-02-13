@@ -196,6 +196,13 @@ void MainWindow::startStopCalculation()
             ui->timeLabel->setPalette(invalidPalette);
             ui->timeLineEdit->setPalette(invalidPalette);
         }
+        if ((qAbs(deltaT) > qAbs(time)) || (deltaT > 0 && time < 0) || (deltaT < 0 && time > 0)) {
+            allOk = false;
+            ui->deltaTimeLabel->setPalette(invalidPalette);
+            ui->deltaTimeLineEdit->setPalette(invalidPalette);
+            ui->timeLabel->setPalette(invalidPalette);
+            ui->timeLineEdit->setPalette(invalidPalette);
+        }
         QVector2D minBound;
         minBound.setX(ui->xMinLineEdit->text().toFloat(&ok));
         if (ok) {
@@ -234,9 +241,23 @@ void MainWindow::startStopCalculation()
             ui->yMaxLabel->setPalette(invalidPalette);
             ui->yMaxLineEdit->setPalette(invalidPalette);
         }
+        if (minBound.x() > maxBound.x()) {
+            allOk = false;
+            ui->xMinLabel->setPalette(invalidPalette);
+            ui->xMinLineEdit->setPalette(invalidPalette);
+            ui->xMaxLabel->setPalette(invalidPalette);
+            ui->xMaxLineEdit->setPalette(invalidPalette);
+        }
+        if (minBound.y() > maxBound.y()) {
+            allOk = false;
+            ui->yMinLabel->setPalette(invalidPalette);
+            ui->yMinLineEdit->setPalette(invalidPalette);
+            ui->yMaxLabel->setPalette(invalidPalette);
+            ui->yMaxLineEdit->setPalette(invalidPalette);
+        }
         QVector2D resolution;
         resolution.setX(ui->widthLineEdit->text().toFloat(&ok));
-        if (ok) {
+        if (ok && resolution.x() > 0) {
             ui->widthLabel->setPalette(this->palette());
             ui->widthLineEdit->setPalette(this->palette());
         } else {
@@ -245,7 +266,7 @@ void MainWindow::startStopCalculation()
             ui->widthLineEdit->setPalette(invalidPalette);
         }
         resolution.setY(ui->heightLineEdit->text().toFloat(&ok));
-        if (ok) {
+        if (ok && resolution.y() > 0) {
             ui->heightLabel->setPalette(this->palette());
             ui->heightLineEdit->setPalette(this->palette());
         } else {

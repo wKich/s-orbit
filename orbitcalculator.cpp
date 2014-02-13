@@ -98,7 +98,11 @@ void OrbitCalculator::start(const float &dt, const float &t, const QVector2D &mi
         if (planetPtrs.at(i).isStatic == false) {
             dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeedX = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed.x();
             dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeedY = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed.y();
-            dynamicPlanets[planetPtrs.at(i).ptr->index].positions.append(planetPtrs.at(i).ptr->startPosition);
+            if (deltaT < 0) {
+                dynamicPlanets[planetPtrs.at(i).ptr->index].positions.append(planetPtrs.at(i).ptr->startPosition + dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed * deltaT);
+            } else {
+                dynamicPlanets[planetPtrs.at(i).ptr->index].positions.append(planetPtrs.at(i).ptr->startPosition);
+            }
             dynamicPlanets[planetPtrs.at(i).ptr->index].samples.append(1);
         }
     }
@@ -123,7 +127,7 @@ void OrbitCalculator::run()
     double df, fx, fy;
     float dx = (maxBound.x() - minBound.x()) / resolution.x();
     float dy = (maxBound.y() - minBound.y()) / resolution.y();
-    while (running && t < time) {
+    while (running && qAbs(t) < qAbs(time)) {
         //Расчет параметров для каждой планеты
         for (int j = 0; j < dynamicPlanets.size(); j++) {
             fx = 0;
@@ -163,7 +167,7 @@ void OrbitCalculator::run()
         }
         t += deltaT;
     }
-    if (t < time) {
+    if (qAbs(t) < qAbs(time)) {
         status.code = CalcStatus::OutOfRange;
         status.time = t;
         time = t;
