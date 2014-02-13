@@ -75,8 +75,8 @@ QImage ImageRender::getImage(const QVector2D &minBounder, const QVector2D &maxBo
 
 void ImageRender::initialize()
 {
-    m_surface.create();
     m_context = new QOpenGLContext(this);
+    m_surface.create();
     m_context->setFormat(m_surface.requestedFormat());
     m_context->create();
     m_context->makeCurrent(&m_surface);
