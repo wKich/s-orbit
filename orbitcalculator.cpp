@@ -212,6 +212,8 @@ void OrbitCalculator::save()
             QRgb color = dynamicPlanets.at(i).color.rgb();
             dataFile.write(reinterpret_cast<char*>(&color), sizeof(QRgb));
         }
+
+        previewRender->initialize(minBound, maxBound, staticPlanets);
     }
 
     QVector<QVector2D> positions;
@@ -242,8 +244,7 @@ void OrbitCalculator::save()
         }
     }
 
-    preview = previewRender->getImage(minBound, maxBound, staticPlanets, dynamicPlanets);
-    preview.save(dataFile.fileName().left(dataFile.fileName().size() - 4) + ".png");
+    previewRender->render(dynamicPlanets);
 
     for (int i = 0; i < dynamicPlanets.size(); i++) {
         dynamicPlanets[i].positions.clear();
@@ -256,6 +257,9 @@ void OrbitCalculator::save()
             dynamicPlanets[i].samples.append(samples.at(i));
         }
     } else {
+        preview = previewRender->getImage();
+        preview.save(dataFile.fileName().left(dataFile.fileName().size() - 4) + ".png");
+
         dataFile.seek(sizeof(double));
         dataFile.write(reinterpret_cast<char*>(&time), sizeof(double));
         dataFile.close();
