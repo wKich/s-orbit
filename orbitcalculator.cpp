@@ -89,8 +89,8 @@ void OrbitCalculator::start(const float &dt, const float &t, const QVector2D &mi
 
     deltaT = dt;
     time = t;
-    minBounder = min;
-    maxBounder = max;
+    minBound = min;
+    maxBound = max;
     resolution = res;
     for (int i = 0; i < planetPtrs.size(); i++) {
         planetPtrs.at(i).ptr->currentPositionX = planetPtrs.at(i).ptr->startPosition.x();
@@ -121,8 +121,8 @@ void OrbitCalculator::run()
     double t = 0;
     double dr, rx, ry;
     double df, fx, fy;
-    float dx = (maxBounder.x() - minBounder.x()) / resolution.x();
-    float dy = (maxBounder.y() - minBounder.y()) / resolution.y();
+    float dx = (maxBound.x() - minBound.x()) / resolution.x();
+    float dy = (maxBound.y() - minBound.y()) / resolution.y();
     while (running && t < time) {
         //Расчет параметров для каждой планеты
         for (int j = 0; j < dynamicPlanets.size(); j++) {
@@ -154,8 +154,8 @@ void OrbitCalculator::run()
                 dynamicPlanets[j].positions.append(QVector2D(dynamicPlanets.at(j).currentPositionX, dynamicPlanets.at(j).currentPositionY));
                 dynamicPlanets[j].samples.append(1);
             }
-            if (dynamicPlanets.at(j).currentPositionX < minBounder.x() || dynamicPlanets.at(j).currentPositionX > maxBounder.x() ||
-                dynamicPlanets.at(j).currentPositionY < minBounder.y() || dynamicPlanets.at(j).currentPositionY > maxBounder.y())
+            if (dynamicPlanets.at(j).currentPositionX < minBound.x() || dynamicPlanets.at(j).currentPositionX > maxBound.x() ||
+                dynamicPlanets.at(j).currentPositionY < minBound.y() || dynamicPlanets.at(j).currentPositionY > maxBound.y())
             {
                 running = false;
                 status.values.append(j);
@@ -186,12 +186,12 @@ void OrbitCalculator::save()
         dataFile.open(QFile::ReadWrite);
         dataFile.write(reinterpret_cast<char*>(&deltaT), sizeof(double));
         dataFile.write(reinterpret_cast<char*>(&time), sizeof(double));
-        x = minBounder.x();
-        y = minBounder.y();
+        x = minBound.x();
+        y = minBound.y();
         dataFile.write(reinterpret_cast<char*>(&x), sizeof(float));
         dataFile.write(reinterpret_cast<char*>(&y), sizeof(float));
-        x = maxBounder.x();
-        y = maxBounder.y();
+        x = maxBound.x();
+        y = maxBound.y();
         dataFile.write(reinterpret_cast<char*>(&x), sizeof(float));
         dataFile.write(reinterpret_cast<char*>(&y), sizeof(float));
         unsigned int sPlanets = staticPlanets.size();
@@ -242,7 +242,7 @@ void OrbitCalculator::save()
         }
     }
 
-    preview = previewRender->getImage(minBounder, maxBounder, staticPlanets, dynamicPlanets);
+    preview = previewRender->getImage(minBound, maxBound, staticPlanets, dynamicPlanets);
     preview.save(dataFile.fileName().left(dataFile.fileName().size() - 4) + ".png");
 
     for (int i = 0; i < dynamicPlanets.size(); i++) {

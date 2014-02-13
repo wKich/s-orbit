@@ -196,8 +196,8 @@ void MainWindow::startStopCalculation()
             ui->timeLabel->setPalette(invalidPalette);
             ui->timeLineEdit->setPalette(invalidPalette);
         }
-        QVector2D minBounder;
-        minBounder.setX(ui->xMinLineEdit->text().toFloat(&ok));
+        QVector2D minBound;
+        minBound.setX(ui->xMinLineEdit->text().toFloat(&ok));
         if (ok) {
             ui->xMinLabel->setPalette(this->palette());
             ui->xMinLineEdit->setPalette(this->palette());
@@ -206,7 +206,7 @@ void MainWindow::startStopCalculation()
             ui->xMinLabel->setPalette(invalidPalette);
             ui->xMinLineEdit->setPalette(invalidPalette);
         }
-        minBounder.setY(ui->yMinLineEdit->text().toFloat(&ok));
+        minBound.setY(ui->yMinLineEdit->text().toFloat(&ok));
         if (ok) {
             ui->yMinLabel->setPalette(this->palette());
             ui->yMinLineEdit->setPalette(this->palette());
@@ -215,8 +215,8 @@ void MainWindow::startStopCalculation()
             ui->yMinLabel->setPalette(invalidPalette);
             ui->yMinLineEdit->setPalette(invalidPalette);
         }
-        QVector2D maxBounder;
-        maxBounder.setX(ui->xMaxLineEdit->text().toFloat(&ok));
+        QVector2D maxBound;
+        maxBound.setX(ui->xMaxLineEdit->text().toFloat(&ok));
         if (ok) {
             ui->xMaxLabel->setPalette(this->palette());
             ui->xMaxLineEdit->setPalette(this->palette());
@@ -225,7 +225,7 @@ void MainWindow::startStopCalculation()
             ui->xMaxLabel->setPalette(invalidPalette);
             ui->xMaxLineEdit->setPalette(invalidPalette);
         }
-        maxBounder.setY(ui->yMaxLineEdit->text().toFloat(&ok));
+        maxBound.setY(ui->yMaxLineEdit->text().toFloat(&ok));
         if (ok) {
             ui->yMaxLabel->setPalette(this->palette());
             ui->yMaxLineEdit->setPalette(this->palette());
@@ -257,7 +257,7 @@ void MainWindow::startStopCalculation()
         if (allOk) {
             ui->controlWidget->setEnabled(false);
             ui->calcButton->setText("Stop Calc");
-            orbitCalc->start(deltaT, time, minBounder, maxBounder, resolution);
+            orbitCalc->start(deltaT, time, minBound, maxBound, resolution);
         }
     }
 }
@@ -289,7 +289,7 @@ void MainWindow::calculateResultSize()
     double deltaT = ui->deltaTimeLineEdit->text().toDouble(&ok);
     double time = ui->timeLineEdit->text().toDouble(&ok);
     if (ok && deltaT > 0 && time > deltaT && ui->planetTableWidget->rowCount() > 0) {
-        //deltaT + time + minBounder + maxBounder + staticCount + dynamicCount
+        //deltaT + time + minBound + maxBound + staticCount + dynamicCount
         float resultSize = sizeof(double) + sizeof(double) + sizeof(QVector2D) + sizeof(QVector2D) + sizeof(unsigned int) + sizeof(unsigned int);
         for (int i = 0; i < ui->planetTableWidget->rowCount(); i++) {
             if (ui->planetTableWidget->item(i, 5)->data(Qt::DisplayRole).toString() == "true") {

@@ -14,7 +14,7 @@ ImageRender::~ImageRender()
     delete m_fbo;
 }
 
-QImage ImageRender::getImage(const QVector2D &minBounder, const QVector2D &maxBounder,
+QImage ImageRender::getImage(const QVector2D &minBound, const QVector2D &maxBound,
                              const QList<StaticPlanet> &staticPlanets, const QList<DynamicPlanet> &dynamicPlanets)
 {
     if (!m_fbo)
@@ -26,7 +26,7 @@ QImage ImageRender::getImage(const QVector2D &minBounder, const QVector2D &maxBo
     glViewport(0, 0, m_fbo->width(), m_fbo->height());
 
     QMatrix4x4 matrix;
-    matrix.ortho(minBounder.x(), maxBounder.x(), minBounder.y(), maxBounder.y(), 0.0f, 1.0f);
+    matrix.ortho(minBound.x(), maxBound.x(), minBound.y(), maxBound.y(), 0.0f, 1.0f);
 
     m_program->bind();
     m_program->setUniformValue(m_matrixUni, matrix);

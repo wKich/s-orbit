@@ -74,8 +74,8 @@ private:
     //must be time / deltaT <= 10E+7 (float)
     double deltaT;
     double time;
-    QVector2D minBounder;
-    QVector2D maxBounder;
+    QVector2D minBound;
+    QVector2D maxBound;
     QVector2D resolution;
 
     ImageRender* previewRender;

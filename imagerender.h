@@ -59,7 +59,7 @@ class ImageRender : public QObject
 public:
     explicit ImageRender(QObject *parent = 0);
     ~ImageRender();
-    QImage getImage(const QVector2D& minBounder, const QVector2D& maxBounder,
+    QImage getImage(const QVector2D& minBound, const QVector2D& maxBound,
                     const QList<StaticPlanet>& staticPlanets, const QList<DynamicPlanet>& dynamicPlanets);
 
 signals:
