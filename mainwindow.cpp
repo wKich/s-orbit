@@ -12,6 +12,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QThread* thread = new QThread;
     orbitCalc = new OrbitCalculator;
     orbitCalc->moveToThread(thread);
+    connect(thread, SIGNAL(started()), this, SLOT(createSurface()));
+    connect(this, SIGNAL(newSurface(QOffscreenSurface*)), orbitCalc, SLOT(setSurface(QOffscreenSurface*)));
     connect(orbitCalc, SIGNAL(destroyed()), thread, SLOT(quit()));
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
     connect(ui->addEditPlanetButton, SIGNAL(clicked()), this, SLOT(addPlanet()));
@@ -54,6 +56,13 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     } else {
         QMainWindow::keyPressEvent(event);
     }
+}
+
+void MainWindow::createSurface()
+{
+    QOffscreenSurface* surface = new QOffscreenSurface();
+    surface->create();
+    emit newSurface(surface);
 }
 
 void MainWindow::addPlanet()

@@ -48,6 +48,9 @@ signals:
     void exec();
     void finished();
 
+public slots:
+    void setSurface(QOffscreenSurface* surface);
+
 private:
     struct PlanetPtr {
         bool isStatic;

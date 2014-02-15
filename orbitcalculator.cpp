@@ -119,6 +119,13 @@ const CalcStatus & OrbitCalculator::getCalculationStatus() const
     return status;
 }
 
+void OrbitCalculator::setSurface(QOffscreenSurface *surface)
+{
+    if (!previewRender)
+        previewRender = new ImageRender(this);
+    previewRender->setSurface(surface);
+}
+
 void OrbitCalculator::run()
 {
     running = true;
@@ -178,9 +185,6 @@ void OrbitCalculator::run()
 
 void OrbitCalculator::save()
 {
-    if (!previewRender)
-        previewRender = new ImageRender(this);
-
     //Warning
     //if (maxPlanetSamples - minPlanetSamples) == (1024 * 1024 * 1024 / sizeof(QVector2D) / dynamicPlanets.size()) it may crash app
     //Or solve it with add additional zero data

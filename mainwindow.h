@@ -23,6 +23,9 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+signals:
+    void newSurface(QOffscreenSurface* surface);
+
 protected:
     void keyPressEvent(QKeyEvent* event);
 
@@ -33,6 +36,7 @@ private:
     QString defaultStyle;
 
 private slots:
+    void createSurface();
     void addPlanet();
     void startStopCalculation();
     void enablePlanetSpeed(const bool &checked);
