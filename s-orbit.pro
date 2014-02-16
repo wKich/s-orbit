@@ -17,12 +17,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     orbitcalculator.cpp \
     imagerender.cpp \
-    statusdialog.cpp
+    statusdialog.cpp \
+    datafile.cpp
 
 HEADERS  += mainwindow.h \
     orbitcalculator.h \
     imagerender.h \
-    statusdialog.h
+    statusdialog.h \
+    datafile.h
 
 FORMS    += mainwindow.ui
 

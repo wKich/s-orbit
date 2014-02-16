@@ -4,11 +4,9 @@
 #include <QtCore>
 #include <QVector>
 #include <QVector2D>
-#include <QThread>
-#include <QFile>
-#include <QDateTime>
 
 #include "imagerender.h"
+#include "datafile.h"
 
 struct CalcStatus {
     enum StatusCode {
@@ -81,13 +79,15 @@ private:
     QVector2D maxBound;
     QVector2D resolution;
 
+    DataFile dFile;
     ImageRender* previewRender;
     QImage preview;
-    QFile dataFile;
+
+    void updatePreview();
+    void reducePlanetsSamples();
 
 private slots:
     void run();
-    void save();
 };
 
 #endif // ORBITCALCULATOR_H

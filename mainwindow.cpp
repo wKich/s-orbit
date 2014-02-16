@@ -9,23 +9,23 @@ MainWindow::MainWindow(QWidget *parent) :
     defaultStyle = "border: none; background-color: #FFFFFF;";
     ui->colorButton->setStyleSheet(defaultStyle);
     editing = false;
-    QThread* thread = new QThread;
-    orbitCalc = new OrbitCalculator;
-    orbitCalc->moveToThread(thread);
-    connect(thread, SIGNAL(started()), this, SLOT(createSurface()));
+    QThread* orbitThread = new QThread();
+    orbitCalc = new OrbitCalculator();
+    orbitCalc->moveToThread(orbitThread);
+    connect(orbitThread, SIGNAL(started()), this, SLOT(createSurface()));
     connect(this, SIGNAL(newSurface(QOffscreenSurface*)), orbitCalc, SLOT(setSurface(QOffscreenSurface*)));
-    connect(orbitCalc, SIGNAL(destroyed()), thread, SLOT(quit()));
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-    connect(ui->addEditPlanetButton, SIGNAL(clicked()), this, SLOT(addPlanet()));
-    connect(ui->calcButton, SIGNAL(clicked()), this, SLOT(startStopCalculation()));
+    connect(orbitCalc, SIGNAL(destroyed()), orbitThread, SLOT(quit()));
+    connect(orbitThread, SIGNAL(finished()), orbitThread, SLOT(deleteLater()));
     connect(orbitCalc, SIGNAL(finished()), this, SLOT(enableControls()));
     connect(orbitCalc, SIGNAL(finished()), this, SLOT(showCalculationStatus()));
+    connect(ui->addEditPlanetButton, SIGNAL(clicked()), this, SLOT(addPlanet()));
+    connect(ui->calcButton, SIGNAL(clicked()), this, SLOT(startStopCalculation()));
     connect(ui->isStaticCheckBox, SIGNAL(toggled(bool)), this, SLOT(enablePlanetSpeed(bool)));
     connect(ui->timeLineEdit, SIGNAL(editingFinished()), this, SLOT(calculateResultSize()));
     connect(ui->addEditPlanetButton, SIGNAL(clicked()), this, SLOT(calculateResultSize()));
     connect(ui->planetTableWidget, SIGNAL(itemSelectionChanged()), this, SLOT(editPlanet()));
     connect(ui->colorButton, SIGNAL(clicked()), this, SLOT(showColorDialog()));
-    thread->start();
+    orbitThread->start();
 }
 
 MainWindow::~MainWindow()
