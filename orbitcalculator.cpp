@@ -2,8 +2,7 @@
 
 OrbitCalculator::OrbitCalculator(QObject *parent) :
     QObject(parent),
-    running(false),
-    previewRender(nullptr)
+    running(false)
 {
     time = 0;
     connect(this, SIGNAL(exec()), this, SLOT(run()));
@@ -118,19 +117,17 @@ const CalcStatus & OrbitCalculator::getCalculationStatus() const
     return status;
 }
 
-void OrbitCalculator::setSurface(QOffscreenSurface *surface)
+void OrbitCalculator::createSurface()
 {
-    if (!previewRender)
-        previewRender = new ImageRender(this);
-    previewRender->setSurface(surface);
+    previewRender.createSurface();
 }
 
 void OrbitCalculator::updatePreview()
 {
-    previewRender->render(dynamicPlanets);
+    previewRender.render(dynamicPlanets);
 
     if (running == false) {
-        preview = previewRender->getImage();
+        preview = previewRender.getImage();
         preview.save(dFile.getFileName().left(dFile.getFileName().size() - 4) + ".png");
     }
 }
@@ -153,7 +150,7 @@ void OrbitCalculator::reducePlanetsSamples()
 void OrbitCalculator::run()
 {
     dFile.initialize(deltaT, time, minBound, maxBound, staticPlanets, dynamicPlanets);
-    previewRender->initialize(minBound, maxBound, staticPlanets);
+    previewRender.initialize(minBound, maxBound, staticPlanets);
 
     running = true;
     double t = 0;

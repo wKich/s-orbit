@@ -3,7 +3,6 @@
 ImageRender::ImageRender(QObject *parent) :
     QObject(parent),
     m_context(nullptr),
-    m_surface(nullptr),
     m_fbo(nullptr),
     m_program(nullptr)
 {
@@ -11,29 +10,22 @@ ImageRender::ImageRender(QObject *parent) :
 
 ImageRender::~ImageRender()
 {
-    m_surface->destroy();
-    delete m_surface;
+    m_surface.destroy();
     delete m_fbo;
 }
 
-void ImageRender::setSurface(QOffscreenSurface *surface)
+void ImageRender::createSurface()
 {
-    if (!m_surface) {
-        m_surface = surface;
-    } else {
-        surface->destroy();
-        delete surface;
-    }
+    m_surface.create();
 }
 
 void ImageRender::initialize(const QVector2D &min, const QVector2D &max, const QList<StaticPlanet> &staticPlanets)
 {
     if (!m_fbo) {
         m_context = new QOpenGLContext(this);
-        m_surface->create();
-        m_context->setFormat(m_surface->requestedFormat());
+        m_context->setFormat(m_surface.requestedFormat());
         m_context->create();
-        m_context->makeCurrent(m_surface);
+        m_context->makeCurrent(&m_surface);
 
         QSize size(800, 600);
         m_fbo = new QOpenGLFramebufferObject(size);

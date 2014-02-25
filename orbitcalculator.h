@@ -47,7 +47,7 @@ signals:
     void finished();
 
 public slots:
-    void setSurface(QOffscreenSurface* surface);
+    void createSurface();
 
 private:
     struct PlanetPtr {
@@ -80,7 +80,7 @@ private:
     QVector2D resolution;
 
     DataFile dFile;
-    ImageRender* previewRender;
+    ImageRender previewRender;
     QImage preview;
 
     void updatePreview();

@@ -59,7 +59,7 @@ class ImageRender : public QObject
 public:
     explicit ImageRender(QObject *parent = 0);
     ~ImageRender();
-    void setSurface(QOffscreenSurface* surface);
+    void createSurface();
     void initialize(const QVector2D& min, const QVector2D& max, const QList<StaticPlanet> &staticPlanets);
     void render(const QList<DynamicPlanet>& dynamicPlanets);
     QImage getImage() const;
@@ -70,7 +70,7 @@ public slots:
 
 private:
     QOpenGLContext* m_context;
-    QOffscreenSurface* m_surface;
+    QOffscreenSurface m_surface;
     QOpenGLFramebufferObject* m_fbo;
     QOpenGLShaderProgram* m_program;
     int m_vertexAttr;
