@@ -8,7 +8,8 @@
 
 #include <QDebug>
 
-#include "orbitcalculator.h"
+#include "bruteforcecalculator.h"
+#include "barneshutcalculator.h"
 #include "statusdialog.h"
 
 namespace Ui {

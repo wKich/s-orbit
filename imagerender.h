@@ -10,6 +10,8 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
 
+#include "pointdouble2d.h"
+
 struct StaticPlanet {
     int index;
     float mass;

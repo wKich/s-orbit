@@ -3,21 +3,14 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    orbitCalc(nullptr)
 {
     ui->setupUi(this);
     defaultStyle = "border: none; background-color: #FFFFFF;";
     ui->colorButton->setStyleSheet(defaultStyle);
     editing = false;
-    QThread* orbitThread = new QThread();
-    orbitCalc = new OrbitCalculator();
-    orbitCalc->moveToThread(orbitThread);
-    connect(orbitThread, SIGNAL(started()), this, SIGNAL(needCreateSurface()));
-    connect(this, SIGNAL(needCreateSurface()), orbitCalc, SLOT(createSurface()), Qt::DirectConnection);
-    connect(orbitCalc, SIGNAL(destroyed()), orbitThread, SLOT(quit()));
-    connect(orbitThread, SIGNAL(finished()), orbitThread, SLOT(deleteLater()));
-    connect(orbitCalc, SIGNAL(finished()), this, SLOT(enableControls()));
-    connect(orbitCalc, SIGNAL(finished()), this, SLOT(showCalculationStatus()));
+
     connect(ui->addEditPlanetButton, SIGNAL(clicked()), this, SLOT(addPlanet()));
     connect(ui->calcButton, SIGNAL(clicked()), this, SLOT(startStopCalculation()));
     connect(ui->isStaticCheckBox, SIGNAL(toggled(bool)), this, SLOT(enablePlanetSpeed(bool)));
@@ -25,14 +18,17 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->addEditPlanetButton, SIGNAL(clicked()), this, SLOT(calculateResultSize()));
     connect(ui->planetTableWidget, SIGNAL(itemSelectionChanged()), this, SLOT(editPlanet()));
     connect(ui->colorButton, SIGNAL(clicked()), this, SLOT(showColorDialog()));
-    orbitThread->start();
+    connect(ui->barneshutRadio, SIGNAL(toggled(bool)), ui->tetaLabel, SLOT(setEnabled(bool)));
+    connect(ui->barneshutRadio, SIGNAL(toggled(bool)), ui->tetaLineEdit, SLOT(setEnabled(bool)));
 }
 
 MainWindow::~MainWindow()
 {
-    if (orbitCalc->isRunning())
-        orbitCalc->stop();
-    orbitCalc->deleteLater();
+    if (orbitCalc != nullptr) {
+        if (orbitCalc->isRunning())
+            orbitCalc->stop();
+        orbitCalc->deleteLater();
+    }
     delete ui;
 }
 
@@ -42,7 +38,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         switch (event->key()) {
         case Qt::Key_Delete:
             if (ui->planetTableWidget->selectedItems().size() > 0) {
-                orbitCalc->removePlanet(ui->planetTableWidget->currentRow());
                 ui->planetTableWidget->removeRow(ui->planetTableWidget->selectedItems().first()->row());
             }
             break;
@@ -138,7 +133,6 @@ void MainWindow::addPlanet()
                 ui->planetTableWidget->selectedItems()[5]->setText("true");
             }
             ui->planetTableWidget->selectedItems()[6]->setBackgroundColor(color);
-            orbitCalc->modifyPlanet(ui->planetTableWidget->currentRow(), mass, position, speed, isStatic, color);
             ui->planetTableWidget->clearSelection();
         } else {
             ui->planetTableWidget->insertRow(ui->planetTableWidget->rowCount());
@@ -156,7 +150,6 @@ void MainWindow::addPlanet()
             }
             ui->planetTableWidget->setItem(ui->planetTableWidget->rowCount() - 1, 6, new QTableWidgetItem());
             ui->planetTableWidget->item(ui->planetTableWidget->rowCount() - 1, 6)->setBackgroundColor(color);
-            orbitCalc->addPlanet(mass, position, speed, isStatic, color);
         }
         ui->massLineEdit->clear();
         ui->xPositionLineEdit->clear();
@@ -170,7 +163,7 @@ void MainWindow::addPlanet()
 
 void MainWindow::startStopCalculation()
 {
-    if (orbitCalc->isRunning()) {
+    if (orbitCalc != nullptr && orbitCalc->isRunning()) {
         enableControls();
         orbitCalc->stop();
     } else {
@@ -276,11 +269,67 @@ void MainWindow::startStopCalculation()
             ui->heightLabel->setPalette(invalidPalette);
             ui->heightLineEdit->setPalette(invalidPalette);
         }
+        float teta = ui->tetaLineEdit->text().toFloat(&ok);
+        if (ui->barneshutRadio->isChecked()) {
+            if (ok && teta > 0) {
+                ui->tetaLabel->setPalette(this->palette());
+                ui->tetaLineEdit->setPalette(this->palette());
+            } else {
+                allOk = false;
+                ui->tetaLabel->setPalette(invalidPalette);
+                ui->tetaLineEdit->setPalette(invalidPalette);
+            }
+        }
 
         if (allOk) {
-            ui->controlWidget->setEnabled(false);
-            ui->calcButton->setText("Stop Calc");
-            orbitCalc->start(deltaT, time, minBound, maxBound, resolution);
+            QList<StaticPlanet> staticPlanets;
+            QList<DynamicPlanet> dynamicPlanets;
+            for (int i = 0; i < ui->planetTableWidget->rowCount(); i++) {
+                float mass = ui->planetTableWidget->item(i, 0)->text().toFloat();
+                QVector2D position = QVector2D(ui->planetTableWidget->item(i, 1)->text().toFloat(),
+                                               ui->planetTableWidget->item(i, 2)->text().toFloat());
+                QColor color = ui->planetTableWidget->item(i, 6)->backgroundColor();
+                if (ui->planetTableWidget->item(i, 5)->text() == "false") {
+                    QVector2D speed = QVector2D(ui->planetTableWidget->item(i, 3)->text().toFloat(),
+                                      ui->planetTableWidget->item(i, 4)->text().toFloat());
+                    dynamicPlanets.append(DynamicPlanet(dynamicPlanets.size(), mass, position, speed, color));
+                } else {
+                    staticPlanets.append(StaticPlanet(staticPlanets.size(), mass, position, color));
+                }
+            }
+
+            if (orbitCalc != nullptr) {
+                delete orbitCalc;
+                orbitCalc = nullptr;
+            }
+
+            if (ui->brutforceRadio->isChecked()) {
+                orbitCalc = new BruteforceCalculator();
+            } else if (ui->barneshutRadio->isChecked()) {
+                orbitCalc = new BarnesHutCalculator();
+                qobject_cast<BarnesHutCalculator*>(orbitCalc)->setTeta(teta);
+            } else {
+                ui->brutforceRadio->setPalette(invalidPalette);
+                ui->barneshutRadio->setPalette(invalidPalette);
+            }
+
+            if (orbitCalc != nullptr) {
+                ui->brutforceRadio->setPalette(this->palette());
+                ui->barneshutRadio->setPalette(this->palette());
+                ui->controlWidget->setEnabled(false);
+                ui->calcButton->setText("Stop Calc");
+                QThread* orbitThread = new QThread();
+                orbitCalc->moveToThread(orbitThread);
+                orbitCalc->createSurface();
+                orbitCalc->setPlanets(staticPlanets, dynamicPlanets);
+                orbitCalc->setProperties(deltaT, time, minBound, maxBound, resolution);
+                connect(orbitThread, SIGNAL(started()), orbitCalc, SIGNAL(exec()));
+                connect(orbitCalc, SIGNAL(finished()), this, SLOT(enableControls()));
+                connect(orbitCalc, SIGNAL(finished()), this, SLOT(showCalculationStatus()));
+                connect(orbitCalc, SIGNAL(destroyed()), orbitThread, SLOT(quit()));
+                connect(orbitThread, SIGNAL(finished()), orbitThread, SLOT(deleteLater()));
+                orbitThread->start();
+            }
         }
     }
 }

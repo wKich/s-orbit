@@ -32,13 +32,12 @@ class OrbitCalculator : public QObject
 public:
     explicit OrbitCalculator(QObject* parent = 0);
     ~OrbitCalculator();
-    void addPlanet(const float &mass, const QVector2D &pos, const QVector2D &curSpeed, const bool &isStatic, const QColor &color);
-    void modifyPlanet(const int &id, const float &mass, const QVector2D &startPos, const QVector2D &startSpeed, const bool &isStatic, const QColor &color);
-    void removePlanet(const int &id);
+    void createSurface();
     const DynamicPlanet & getDynamicPlanet(const int &id) const;
     const QImage& getPreview() const;
     bool isRunning() const;
-    void start(const float &dt, const float &t, const QVector2D &min, const QVector2D &max, const QVector2D &res);
+    void setPlanets(const QList<StaticPlanet>& sp, const QList<DynamicPlanet>& dp);
+    void setProperties(const float &dt, const float &t, const QVector2D &min, const QVector2D &max, const QVector2D &res);
     void stop();
     const CalcStatus & getCalculationStatus() const;
 
@@ -47,9 +46,8 @@ signals:
     void finished();
 
 public slots:
-    void createSurface();
 
-private:
+protected:
     struct PlanetPtr {
         bool isStatic;
         StaticPlanet* ptr;
@@ -85,6 +83,8 @@ private:
 
     void updatePreview();
     void reducePlanetsSamples();
+
+    virtual void calc() = 0;
 
 private slots:
     void run();

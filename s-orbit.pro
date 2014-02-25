@@ -18,13 +18,18 @@ SOURCES += main.cpp\
     orbitcalculator.cpp \
     imagerender.cpp \
     statusdialog.cpp \
-    datafile.cpp
+    datafile.cpp \
+    bruteforcecalculator.cpp \
+    barneshutcalculator.cpp
 
 HEADERS  += mainwindow.h \
     orbitcalculator.h \
     imagerender.h \
     statusdialog.h \
-    datafile.h
+    datafile.h \
+    bruteforcecalculator.h \
+    barneshutcalculator.h \
+    pointdouble2d.h
 
 FORMS    += mainwindow.ui
 
