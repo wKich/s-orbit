@@ -52,20 +52,9 @@ void OrbitCalculator::setProperties(const float &dt, const float &t, const QVect
     minBound = min;
     maxBound = max;
     resolution = res;
-    for (int i = 0; i < planetPtrs.size(); i++) {
-        planetPtrs.at(i).ptr->currentPositionX = planetPtrs.at(i).ptr->startPosition.x();
-        planetPtrs.at(i).ptr->currentPositionY = planetPtrs.at(i).ptr->startPosition.y();
-        if (planetPtrs.at(i).isStatic == false) {
-            dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeedX = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed.x();
-            dynamicPlanets[planetPtrs.at(i).ptr->index].currentSpeedY = dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed.y();
-            if (deltaT < 0) {
-                dynamicPlanets[planetPtrs.at(i).ptr->index].positions.append(planetPtrs.at(i).ptr->startPosition + dynamicPlanets.at(planetPtrs.at(i).ptr->index).startSpeed * deltaT);
-            } else {
-                dynamicPlanets[planetPtrs.at(i).ptr->index].positions.append(planetPtrs.at(i).ptr->startPosition);
-            }
-            dynamicPlanets[planetPtrs.at(i).ptr->index].samples.append(1);
-        }
-    }
+    for (int i = 0; i < planetPtrs.size(); i++)
+        if (planetPtrs.at(i).isStatic == false)
+            dynamicPlanets[planetPtrs.at(i).ptr->index].samples.append(PositionSample(1, planetPtrs.at(i).ptr->position.toVector2D()));
 }
 
 void OrbitCalculator::stop()
@@ -91,22 +80,18 @@ void OrbitCalculator::updatePreview()
 void OrbitCalculator::reducePlanetsSamples()
 {
     if (running) {
-        for (int i = 0; i < dynamicPlanets.size(); i++) {
-            dynamicPlanets[i].positions.remove(0, dynamicPlanets.at(i).positions.size() - 1);
+        for (int i = 0; i < dynamicPlanets.size(); i++)
             dynamicPlanets[i].samples.remove(0, dynamicPlanets.at(i).samples.size() - 1);
-        }
     } else {
-        for (int i = 0; i < dynamicPlanets.size(); i++) {
-            dynamicPlanets[i].positions.clear();
+        for (int i = 0; i < dynamicPlanets.size(); i++)
             dynamicPlanets[i].samples.clear();
-        }
     }
 }
 
 void OrbitCalculator::run()
 {
-    dFile.initialize(deltaT, time, minBound, maxBound, staticPlanets, dynamicPlanets);
-    previewRender.initialize(minBound, maxBound, staticPlanets);
+    dFile.initialize(deltaT, time, minBound.toVector2D(), maxBound.toVector2D(), staticPlanets, dynamicPlanets);
+    previewRender.initialize(minBound.toVector2D(), maxBound.toVector2D(), staticPlanets);
 
     running = true;
     calc();

@@ -57,10 +57,10 @@ void ImageRender::initialize(const QVector2D &min, const QVector2D &max, const Q
         m_buffer.create();
         m_buffer.setUsagePattern(QOpenGLBuffer::StaticDraw);
         m_buffer.bind();
-        m_buffer.allocate(staticPlanets.size() * sizeof(QVector2D));
+        m_buffer.allocate(staticPlanets.size() * sizeof(PointDouble2D));
         for (int i = 0; i < staticPlanets.size(); i++)
-            m_buffer.write(i * sizeof(QVector2D), &staticPlanets.at(i).startPosition, sizeof(QVector2D));
-        m_program->setAttributeBuffer(m_vertexAttr, GL_FLOAT, 0, 2);
+            m_buffer.write(i * sizeof(PointDouble2D), &staticPlanets.at(i).position, sizeof(PointDouble2D));
+        m_program->setAttributeBuffer(m_vertexAttr, GL_DOUBLE, 0, 2);
         m_program->enableAttributeArray(m_vertexAttr);
         for (int i = 0; i < staticPlanets.size(); i++) {
             m_program->setUniformValue(m_colorUni, staticPlanets.at(i).color);
@@ -92,13 +92,14 @@ void ImageRender::render(const QList<DynamicPlanet> &dynamicPlanets)
 
         int buffSize = 0;
         for (int i = 0; i < dynamicPlanets.size(); i++)
-            buffSize += dynamicPlanets.at(i).positions.size() * sizeof(QVector2D);
+            buffSize += dynamicPlanets.at(i).samples.size() * sizeof(QVector2D);
         m_buffer.allocate(buffSize);
 
         int buffOffset = 0;
         for (int i = 0; i< dynamicPlanets.size(); i++) {
-            m_buffer.write(buffOffset, dynamicPlanets.at(i).positions.constData(), dynamicPlanets.at(i).positions.size() * sizeof(QVector2D));
-            buffOffset += dynamicPlanets.at(i).positions.size() * sizeof(QVector2D);
+            for (int j = 0; j < dynamicPlanets.at(i).samples.size(); j++)
+                m_buffer.write(buffOffset + j * sizeof(QVector2D), &dynamicPlanets.at(i).samples.at(j).position, sizeof(QVector2D));
+            buffOffset += dynamicPlanets.at(i).samples.size() * sizeof(QVector2D);
         }
 
         m_program->setAttributeBuffer(m_vertexAttr, GL_FLOAT, 0, 2);
@@ -107,8 +108,8 @@ void ImageRender::render(const QList<DynamicPlanet> &dynamicPlanets)
         buffOffset = 0;
         for (int i = 0; i < dynamicPlanets.size(); i++) {
             m_program->setUniformValue(m_colorUni, dynamicPlanets.at(i).color);
-            glDrawArrays(GL_LINE_STRIP, buffOffset, dynamicPlanets.at(i).positions.size());
-            buffOffset += dynamicPlanets.at(i).positions.size();
+            glDrawArrays(GL_LINE_STRIP, buffOffset, dynamicPlanets.at(i).samples.size());
+            buffOffset += dynamicPlanets.at(i).samples.size();
         }
 
         m_buffer.release();

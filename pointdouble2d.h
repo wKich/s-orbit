@@ -9,6 +9,7 @@ class PointDouble2D
 public:
     PointDouble2D() : xp(0), yp(0) {}
     PointDouble2D(const QPointF& p) : xp(p.x()), yp(p.y()) {}
+    PointDouble2D(const QVector2D& v) : xp(v.x()), yp(v.y()) {}
     PointDouble2D(const double& x, const double& y) : xp(x), yp(y) {}
     PointDouble2D(const PointDouble2D& other) : xp(other.xp), yp(other.yp) {}
 
@@ -42,6 +43,8 @@ public:
     friend inline bool operator<(const PointDouble2D& first, const PointDouble2D& second) { return ((first.xp < second.xp) || (first.yp < second.yp)); }
     friend inline bool operator>(const PointDouble2D& first, const PointDouble2D& second) { return ((first.xp > second.xp) || (first.yp > second.yp)); }
     friend inline bool operator==(const PointDouble2D& first, const PointDouble2D& second) { return (qFuzzyCompare(first.xp, second.xp) && qFuzzyCompare(first.yp, second.yp)); }
+
+    static inline PointDouble2D abs(const PointDouble2D& other) { return PointDouble2D(qAbs(other.xp), qAbs(other.yp)); }
 
     double distanceToPoint(const PointDouble2D& point) { double x = point.xp - xp; double y = point.yp - yp; return sqrt(x*x + y*y); }
     double lenght() const { return sqrt(squareLenght()); }

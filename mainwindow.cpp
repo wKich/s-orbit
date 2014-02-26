@@ -191,7 +191,7 @@ void MainWindow::startStopCalculation()
             ui->timeLabel->setPalette(invalidPalette);
             ui->timeLineEdit->setPalette(invalidPalette);
         }
-        if ((qAbs(deltaT) > qAbs(time)) || (deltaT > 0 && time < 0) || (deltaT < 0 && time > 0)) {
+        if (deltaT < 0 || time < 0 || time < deltaT) {
             allOk = false;
             ui->deltaTimeLabel->setPalette(invalidPalette);
             ui->deltaTimeLineEdit->setPalette(invalidPalette);
@@ -365,9 +365,9 @@ void MainWindow::calculateResultSize()
         float resultSize = sizeof(double) + sizeof(double) + sizeof(QVector2D) + sizeof(QVector2D) + sizeof(unsigned int) + sizeof(unsigned int);
         for (int i = 0; i < ui->planetTableWidget->rowCount(); i++) {
             if (ui->planetTableWidget->item(i, 5)->data(Qt::DisplayRole).toString() == "true") {
-                resultSize += sizeof(QVector2D) + sizeof(QRgb);
+                resultSize += sizeof(PointDouble2D) + sizeof(QRgb);
             } else {
-                resultSize += time / deltaT * (sizeof(unsigned short) + sizeof(QVector2D)) + sizeof(QRgb);
+                resultSize += time / deltaT * (sizeof(PositionSample)) + sizeof(QRgb);
             }
         }
         if (resultSize > 1024) {
@@ -441,7 +441,7 @@ void MainWindow::showCalculationStatus()
     case CalcStatus::OutOfRange:
         msg.append("Out of range:\n");
         for (int i = 0; i < status.values.size(); i++) {
-            QVector2D pos = QVector2D(orbitCalc->getDynamicPlanet(status.values.at(i)).currentPositionX, orbitCalc->getDynamicPlanet(status.values.at(i)).currentPositionY);
+            PointDouble2D pos = orbitCalc->getDynamicPlanet(status.values.at(i)).position;
             msg.append("Planet_" + QString::number(status.values.at(i)) + " (" + QString::number(pos.x()) + ", " + QString::number(pos.y()) + ")\n");
         }
         msg.append("\n");

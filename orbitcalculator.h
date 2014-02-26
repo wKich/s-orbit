@@ -73,9 +73,9 @@ protected:
     //must be time / deltaT <= 10E+7 (float)
     double deltaT;
     double time;
-    QVector2D minBound;
-    QVector2D maxBound;
-    QVector2D resolution;
+    PointDouble2D minBound;
+    PointDouble2D maxBound;
+    PointDouble2D resolution;
 
     DataFile dFile;
     ImageRender previewRender;

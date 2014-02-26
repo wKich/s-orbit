@@ -12,45 +12,56 @@
 
 #include "pointdouble2d.h"
 
+struct PositionSample {
+    unsigned short count;
+    QVector2D position;
+
+    PositionSample(){}
+    PositionSample(const unsigned short& c, const QVector2D& v) :
+        count(c),
+        position(v)
+    {}
+    PositionSample(const PositionSample& ps) :
+        count(ps.count),
+        position(ps.position)
+    {}
+};
+
 struct StaticPlanet {
     int index;
     float mass;
-    QVector2D startPosition;
-    double currentPositionX;    //for backport calculation
-    double currentPositionY;    //for backport calculation
+    PointDouble2D position;
     QColor color;
 
     StaticPlanet(){}
-    StaticPlanet(const int &id, const float &m, const QVector2D &pos, const QColor &c) :
+    StaticPlanet(const int &id, const float &m, const PointDouble2D &pos, const QColor &c) :
         index(id),
         mass(m),
-        startPosition(pos),
+        position(pos),
         color(c)
     {}
     StaticPlanet(const StaticPlanet &p) :
         index(p.index),
         mass(p.mass),
-        startPosition(p.startPosition),
+        position(p.position),
         color(p.color)
     {}
     virtual ~StaticPlanet(){}
 };
 
 struct DynamicPlanet : StaticPlanet {
-    QVector<QVector2D> positions;
-    QVector<unsigned short> samples;
-    QVector2D startSpeed;
-    double currentSpeedX;
-    double currentSpeedY;
+    QVector<PositionSample> samples;
+    PointDouble2D force;
+    PointDouble2D speed;
 
     DynamicPlanet() {}
-    DynamicPlanet(const int &id, const float &m, const QVector2D &pos, const QVector2D &speed, const QColor &c) :
+    DynamicPlanet(const int &id, const float &m, const PointDouble2D &pos, const QVector2D &sp, const QColor &c) :
         StaticPlanet(id, m, pos, c),
-        startSpeed(speed)
+        speed(sp)
     {}
     DynamicPlanet(const DynamicPlanet &p) :
-        StaticPlanet(p.index, p.mass, p.startPosition, p.color),
-        startSpeed(p.startSpeed)
+        StaticPlanet(p.index, p.mass, p.position, p.color),
+        speed(p.speed)
     {}
     ~DynamicPlanet(){}
 };
