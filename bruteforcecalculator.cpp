@@ -8,19 +8,21 @@ BruteforceCalculator::BruteforceCalculator(QObject *parent) :
 void BruteforceCalculator::calc()
 {
     double t = 0;
-    PointDouble2D r, f, d;
+    PointDouble2D r, d;
     d = (maxBound - minBound) / resolution;
     while (running && qAbs(t) < qAbs(time)) {
         //Расчет параметров для каждой планеты
         for (int j = 0; j < dynamicPlanets.size(); j++) {
-            f = PointDouble2D();
+            dynamicPlanets[j].force = PointDouble2D();
             for (int k = 0; k < planetPtrs.size(); k++) {
                 if (planetPtrs.at(k).ptr != &dynamicPlanets.at(j)) {
                     r = planetPtrs.at(k).ptr->position - dynamicPlanets.at(j).position;
-                    f += r / r.lenght() * planetPtrs.at(k).ptr->mass * dynamicPlanets.at(j).mass / r.squareLenght();
+                    dynamicPlanets[j].force += r / r.lenght() * planetPtrs.at(k).ptr->mass * dynamicPlanets.at(j).mass / r.squareLenght();
                 }
             }
-            dynamicPlanets[j].speed += f / dynamicPlanets.at(j).mass * deltaT;
+        }
+        for (int j = 0; j < dynamicPlanets.size(); j++) {
+            dynamicPlanets[j].speed += dynamicPlanets.at(j).force / dynamicPlanets.at(j).mass * deltaT;
             dynamicPlanets[j].position += dynamicPlanets.at(j).speed * deltaT;
             if (!(PointDouble2D::abs(dynamicPlanets.at(j).position - dynamicPlanets.at(j).samples.last().position) > d) &&
                 dynamicPlanets.at(j).samples.last().count < 65535)
