@@ -20,7 +20,8 @@ SOURCES += main.cpp\
     statusdialog.cpp \
     datafile.cpp \
     bruteforcecalculator.cpp \
-    barneshutcalculator.cpp
+    barneshutcalculator.cpp \
+    quadtree.cpp
 
 HEADERS  += mainwindow.h \
     orbitcalculator.h \
@@ -29,7 +30,8 @@ HEADERS  += mainwindow.h \
     datafile.h \
     bruteforcecalculator.h \
     barneshutcalculator.h \
-    pointdouble2d.h
+    pointdouble2d.h \
+    quadtree.h
 
 FORMS    += mainwindow.ui
 

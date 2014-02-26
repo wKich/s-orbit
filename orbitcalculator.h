@@ -48,21 +48,6 @@ signals:
 public slots:
 
 protected:
-    struct PlanetPtr {
-        bool isStatic;
-        StaticPlanet* ptr;
-
-        PlanetPtr() {}
-        PlanetPtr(StaticPlanet* p, const bool &s) :
-            isStatic(s),
-            ptr(p)
-        {}
-        PlanetPtr(const PlanetPtr &p) :
-            isStatic(p.isStatic),
-            ptr(p.ptr)
-        {}
-    };
-
     QList<StaticPlanet> staticPlanets;
     QList<DynamicPlanet> dynamicPlanets;
     QList<PlanetPtr> planetPtrs;

@@ -11,6 +11,9 @@
 #include <QOpenGLBuffer>
 
 #include "pointdouble2d.h"
+#include "quadtree.h"
+
+class QuadTree;
 
 struct PositionSample {
     unsigned short count;
@@ -33,37 +36,73 @@ struct StaticPlanet {
     PointDouble2D position;
     QColor color;
 
+    //barnes-hut
+    QuadTree* leaf;
+
     StaticPlanet(){}
     StaticPlanet(const int &id, const float &m, const PointDouble2D &pos, const QColor &c) :
         index(id),
         mass(m),
         position(pos),
-        color(c)
+        color(c),
+        leaf(nullptr)
+    {}
+    StaticPlanet(const int &id, const float &m, const PointDouble2D &pos, const QColor &c, QuadTree* l) :
+        index(id),
+        mass(m),
+        position(pos),
+        color(c),
+        leaf(l)
     {}
     StaticPlanet(const StaticPlanet &p) :
         index(p.index),
         mass(p.mass),
         position(p.position),
-        color(p.color)
+        color(p.color),
+        leaf(p.leaf)
     {}
     virtual ~StaticPlanet(){}
 };
 
 struct DynamicPlanet : StaticPlanet {
     QVector<PositionSample> samples;
-    PointDouble2D force;
     PointDouble2D speed;
+
+    //barnes-hut
+    PointDouble2D force;
 
     DynamicPlanet() {}
     DynamicPlanet(const int &id, const float &m, const PointDouble2D &pos, const QVector2D &sp, const QColor &c) :
         StaticPlanet(id, m, pos, c),
-        speed(sp)
+        speed(sp),
+        force(PointDouble2D())
+    {}
+    DynamicPlanet(const int &id, const float &m, const PointDouble2D &pos, const QVector2D &sp, const QColor &c, const PointDouble2D& f) :
+        StaticPlanet(id, m, pos, c),
+        speed(sp),
+        force(f)
     {}
     DynamicPlanet(const DynamicPlanet &p) :
-        StaticPlanet(p.index, p.mass, p.position, p.color),
-        speed(p.speed)
+        StaticPlanet(p.index, p.mass, p.position, p.color, p.leaf),
+        speed(p.speed),
+        force(p.force)
     {}
     ~DynamicPlanet(){}
+};
+
+struct PlanetPtr {
+    bool isStatic;
+    StaticPlanet* ptr;
+
+    PlanetPtr() {}
+    PlanetPtr(StaticPlanet* p, const bool &s) :
+        isStatic(s),
+        ptr(p)
+    {}
+    PlanetPtr(const PlanetPtr &p) :
+        isStatic(p.isStatic),
+        ptr(p.ptr)
+    {}
 };
 
 class ImageRender : public QObject

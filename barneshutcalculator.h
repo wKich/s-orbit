@@ -4,6 +4,7 @@
 #include <QObject>
 
 #include "orbitcalculator.h"
+#include "quadtree.h"
 
 class BarnesHutCalculator : public OrbitCalculator
 {
