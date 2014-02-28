@@ -11,7 +11,9 @@ ImageRender::ImageRender(QObject *parent) :
 ImageRender::~ImageRender()
 {
     m_surface.destroy();
+    delete m_program;
     delete m_fbo;
+    delete m_context;
 }
 
 void ImageRender::createSurface()
@@ -22,7 +24,7 @@ void ImageRender::createSurface()
 void ImageRender::initialize(const QVector2D &min, const QVector2D &max, const QList<StaticPlanet> &staticPlanets)
 {
     if (!m_fbo) {
-        m_context = new QOpenGLContext(this);
+        m_context = new QOpenGLContext();
         m_context->setFormat(m_surface.requestedFormat());
         m_context->create();
         m_context->makeCurrent(&m_surface);
@@ -30,7 +32,7 @@ void ImageRender::initialize(const QVector2D &min, const QVector2D &max, const Q
         QSize size(800, 600);
         m_fbo = new QOpenGLFramebufferObject(size);
 
-        m_program = new QOpenGLShaderProgram(this);
+        m_program = new QOpenGLShaderProgram();
         m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/GLSL/main.vert");
         m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/GLSL/main.frag");
         m_program->link();
