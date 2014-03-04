@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
+#include <QQuickView>
 #include <QKeyEvent>
 #include <QTableWidgetItem>
 #include <QColorDialog>
@@ -16,12 +16,12 @@ namespace Ui {
 class MainWindow;
 }
 
-class MainWindow : public QMainWindow
+class MainWindow : public QQuickView
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(QWindow *parent = 0);
     ~MainWindow();
 
 signals:

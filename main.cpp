@@ -1,11 +1,13 @@
 #include "mainwindow.h"
-#include <QApplication>
+#include <QGuiApplication>
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
+    QGuiApplication a(argc, argv);
     MainWindow w;
-    w.show();
+    w.setResizeMode(QQuickView::SizeRootObjectToView);
+    w.setSource(QUrl("qrc:///main.qml"));
+    w.showFullScreen();
 
     return a.exec();
 }

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui quick
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -40,4 +40,5 @@ RESOURCES += \
 
 OTHER_FILES += \
     main.frag \
-    main.vert
+    main.vert \
+    main.qml

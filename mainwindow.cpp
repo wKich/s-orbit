@@ -1,12 +1,9 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow),
+MainWindow::MainWindow(QWindow *parent) :
+    QQuickView(parent),
     orbitCalc(nullptr)
 {
-    ui->setupUi(this);
     defaultStyle = "border: none; background-color: #FFFFFF;";
     ui->colorButton->setStyleSheet(defaultStyle);
     editing = false;
