@@ -14,6 +14,13 @@ How to install:
 
 ================================
 
+Features
+
+* Bruteforce simulation n-body
+* Barnes-Hut simulation
+
+================================
+
 ToDo
 
 * Switch UI from QWidgets to QtQuick
